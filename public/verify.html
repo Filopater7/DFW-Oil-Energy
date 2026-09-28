@@ -225,8 +225,9 @@
       .then(data => {
         loadEl.hidden = true;
         resEl.hidden  = false;
-        if (data.status === 'active')    renderActive(data);
+        if (data.status === 'active')       renderActive(data);
         else if (data.status === 'expired')  renderExpired(data);
+        else if (data.status === 'not_started') renderNotStarted(data);
         else                                 renderNotFound();
       })
       .catch(() => showError('Network error. Could not verify the pass.'));
@@ -314,6 +315,38 @@
         </div>
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
           Driver must submit a new record to get an active pass.
+        </p>
+        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+      `;
+    }
+
+    // ── NOT STARTED ───────────────────────────────────────────
+    function renderNotStarted(d) {
+      resEl.innerHTML = `
+        <div class="status-card not-found" style="border-color:#1565C0;background:rgba(21,101,192,0.08);">
+          <div class="status-header" style="background:linear-gradient(90deg,#0d47a1,#1565C0);">
+            <div class="status-icon">⏳</div>
+            <div>
+              <div class="status-title">TRIP NOT STARTED</div>
+              <div class="status-sub">This pass is valid but the trip hasn't started yet</div>
+            </div>
+          </div>
+          <div class="driver-info">
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">Driver Name</div><div class="info-value">${esc(d.driverName)}</div></div>
+              <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
+              <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
+              <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
+              <div class="info-item full"><div class="info-label">Trip Starts</div><div class="info-value" style="color:#64B5F6;">${new Date(d.startTime).toLocaleString()}</div></div>
+            </div>
+          </div>
+          <div class="expiry-row">
+            <span class="exp-label">Trip duration</span>
+            <span class="exp-value" style="color:#64B5F6;">${d.numberOfDays} day${d.numberOfDays !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
+          This pass will become active when the trip starts.
         </p>
         <a href="index.html" class="btn-back">← Back to Driver Portal</a>
       `;

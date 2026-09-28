@@ -74,6 +74,7 @@ app.post('/api/submit', async (req, res) => {
     store.set(token, {
       token,
       expiresAt:    expiresAt.toISOString(),
+      startTimeUTC: startUTC.toISOString(),   // UTC start for server-side comparison
       submittedAt:  new Date().toISOString(),
       companyName:  String(b.companyName).trim(),
       driverName:   String(b.driverName).trim(),
@@ -112,10 +113,14 @@ app.get('/api/verify/:token', (req, res) => {
     if (!rec)
       return res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
 
-    const expired = new Date() > new Date(rec.expiresAt);
+    const now        = new Date();
+    const expired    = now > new Date(rec.expiresAt);
+    const notStarted = now < new Date(rec.startTimeUTC || rec.startTime);
+    const status     = notStarted ? 'not_started' : expired ? 'expired' : 'active';
+
     return res.json({
-      valid:        !expired,
-      status:       expired ? 'expired' : 'active',
+      valid:        status === 'active',
+      status,
       token:        rec.token,
       expiresAt:    rec.expiresAt,
       submittedAt:  rec.submittedAt,
