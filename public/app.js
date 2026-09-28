@@ -126,6 +126,25 @@
   // Open camera
   openCameraBtn.addEventListener('click', () => startCamera(facingMode));
 
+  // File upload fallback
+  const licenseFileInput = document.getElementById('licenseFileInput');
+  if (licenseFileInput) {
+    licenseFileInput.addEventListener('change', () => {
+      const file = licenseFileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        licenseImageData.value = ev.target.result;
+        capturedImg.src        = ev.target.result;
+        licenseCaptured        = true;
+        cameraCaptured.hidden  = false;
+        cameraIdle.hidden      = true;
+        clearFieldError('scanLicense');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Switch between front / rear camera
   switchCameraBtn.addEventListener('click', () => {
     startCamera(facingMode === 'environment' ? 'user' : 'environment');
@@ -231,8 +250,20 @@
     sigInput.value = sigEmpty ? '' : canvas.toDataURL('image/png');
 
     if (!validateAll()) {
+      // Find and show the first error visibly
       const firstErr = form.querySelector('.field-error:not(:empty)');
-      if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (firstErr) {
+        firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        // Fallback: collect all failing fields and show in error banner
+        const failing = Object.entries(validators)
+          .filter(([id, rule]) => {
+            const el = document.getElementById(id);
+            return !rule.test(el ? el.value : '');
+          })
+          .map(([, rule]) => rule.msg);
+        if (failing.length) showError(failing[0]);
+      }
       return;
     }
 
