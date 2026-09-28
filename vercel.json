@@ -9,10 +9,9 @@
       "maxDuration": 30
     }
   },
-  "routes": [
-    { "src": "/api/verify/(.+)", "dest": "/api/verify/[token].js" },
-    { "src": "/api/submit",      "dest": "/api/submit.js" },
-    { "src": "/api/health",      "dest": "/api/health.js" },
-    { "src": "/(.*)",            "dest": "/public/$1" }
+  "rewrites": [
+    { "source": "/api/verify/:token", "destination": "/api/verify/[token].js" },
+    { "source": "/api/submit",        "destination": "/api/submit.js" },
+    { "source": "/api/health",        "destination": "/api/health.js" }
   ]
 }

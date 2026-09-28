@@ -227,19 +227,18 @@
     e.preventDefault();
     hideBanners();
 
+    // Capture signature before validation
+    sigInput.value = sigEmpty ? '' : canvas.toDataURL('image/png');
+
     if (!validateAll()) {
       const firstErr = form.querySelector('.field-error:not(:empty)');
       if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    // Capture signature as base64 into hidden input
-    sigInput.value = sigEmpty ? '' : canvas.toDataURL('image/png');
-
     setLoading(true);
 
     try {
-      // Send as JSON — Vercel serverless functions parse JSON natively
       const payload = {
         companyName:      document.getElementById('companyName').value,
         driverName:       document.getElementById('driverName').value,
@@ -260,7 +259,6 @@
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Store confirmation data for confirm.html then redirect
         sessionStorage.setItem('dfw_confirm_data', JSON.stringify({
           qrDataURL: result.qrDataURL,
           token:     result.token,
@@ -273,7 +271,7 @@
       }
     } catch (err) {
       console.error('Submission error:', err);
-      showError('Network error. Please check your connection and try again.');
+      showError('Network error: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -307,8 +305,8 @@
 
   function showError(msg) {
     errorMessage.textContent = msg;
-    errorBanner.hidden   = false;
-    successBanner.hidden = true;
+    errorBanner.hidden = false;
+    if (successBanner) successBanner.hidden = true;
   }
 
   // Stop camera if user navigates away
