@@ -239,12 +239,22 @@
     setLoading(true);
 
     try {
-      // Build FormData from the form (hidden inputs carry base64 data)
-      const formData = new FormData(form);
+      // Send as JSON — Vercel serverless functions parse JSON natively
+      const payload = {
+        companyName:      document.getElementById('companyName').value,
+        driverName:       document.getElementById('driverName').value,
+        truckNumber:      document.getElementById('truckNumber').value,
+        startTime:        document.getElementById('startTime').value,
+        numberOfDays:     document.getElementById('numberOfDays').value,
+        phoneNumber:      document.getElementById('phoneNumber').value,
+        licenseImageData: licenseImageData.value,
+        signatureData:    sigInput.value
+      };
 
       const response = await fetch('/api/submit', {
-        method: 'POST',
-        body: formData
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
       });
 
       const result = await response.json();
