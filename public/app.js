@@ -272,13 +272,14 @@
       const result = await response.json();
 
       if (response.ok && result.success) {
-        sessionStorage.setItem('dfw_confirm_data', JSON.stringify({
+        // Store in localStorage (survives refresh) and redirect
+        localStorage.setItem('dfw_confirm_data', JSON.stringify({
           qrDataURL: result.qrDataURL,
           token:     result.token,
           expiresAt: result.expiresAt,
           driver:    result.driver
         }));
-        window.location.href = 'confirm.html';
+        window.location.href = 'confirm.html?token=' + result.token;
       } else {
         showError(result.message || 'Submission failed. Please try again.');
       }
@@ -324,5 +325,10 @@
 
   // Stop camera if user navigates away
   window.addEventListener('beforeunload', stopStream);
+
+  // Force fresh page when driver navigates back (clears all form data)
+  window.addEventListener('pageshow', e => {
+    if (e.persisted) window.location.reload();
+  });
 
 })();
