@@ -82,7 +82,13 @@
     clearFieldError('signatureData');
   });
 
-  window.addEventListener('load',   resizeCanvas);
+  window.addEventListener('load', () => {
+    resizeCanvas();
+    // Always reset form on load — clears back-button cached data
+    form.reset();
+    if (successBanner) successBanner.hidden = true;
+    if (errorBanner)   errorBanner.hidden   = true;
+  });
   window.addEventListener('resize', resizeCanvas);
 
   // ── Camera Capture ─────────────────────────────────────────
@@ -278,6 +284,7 @@
           expiresAt: result.expiresAt,
           driver:    result.driver
         }));
+        sessionStorage.setItem('submitted', 'true');
         window.location.href = 'confirm.html';
       } else {
         showError(result.message || 'Submission failed. Please try again.');
@@ -329,5 +336,25 @@
   window.addEventListener('pageshow', e => {
     if (e.persisted) window.location.reload();
   });
+
+  // Also clear form if we came from confirm page
+  if (sessionStorage.getItem('submitted') === 'true') {
+    sessionStorage.removeItem('submitted');
+    form.reset();
+    // Reset signature
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    sigEmpty = true;
+    sigInput.value = '';
+    // Reset camera
+    licenseCaptured = false;
+    licenseImageData.value = '';
+    capturedImg.src = '';
+    cameraCaptured.hidden    = true;
+    cameraPreviewWrap.hidden = true;
+    cameraIdle.hidden        = false;
+    // Hide banners
+    if (successBanner) successBanner.hidden = true;
+    if (errorBanner)   errorBanner.hidden   = true;
+  }
 
 })();
