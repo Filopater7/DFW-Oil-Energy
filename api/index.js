@@ -1,111 +1,100 @@
 /* ============================================================
-   api/index.js  –  Single Express entry point for Vercel
-   Handles all /api/* routes
+   api/index.js  –  Single self-contained Vercel serverless handler
+   No external lib/ imports — everything inlined to avoid crashes
    ============================================================ */
 'use strict';
 
-const express  = require('express');
+const express        = require('express');
 const { v4: uuidv4 } = require('uuid');
-const QRCode   = require('qrcode');
-const store    = require('../lib/store');
-const { validateDriverForm }    = require('../lib/validate');
-const { sendNotificationEmail } = require('../lib/email');
+const QRCode         = require('qrcode');
 
 const app = express();
 app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+
+// ── In-memory store ────────────────────────────────────────
+const store = global._dfwStore || (global._dfwStore = new Map());
+
+// ── Validation ─────────────────────────────────────────────
+function validate(b) {
+  if (!b.companyName  || b.companyName.trim().length < 2)          return 'Company name must be at least 2 characters.';
+  if (!b.driverName   || b.driverName.trim().length < 2)           return 'Driver name must be at least 2 characters.';
+  if (!b.truckNumber  || !/^[A-Za-z0-9\-]+$/.test(b.truckNumber.trim())) return 'Truck number: letters, numbers, hyphens only.';
+  if (!b.startTime    || isNaN(Date.parse(b.startTime)))           return 'A valid start date and time is required.';
+  const d = Number(b.numberOfDays);
+  if (isNaN(d) || d < 1 || d > 365)                               return 'Number of days must be between 1 and 365.';
+  if (!b.phoneNumber  || !/^[\d\s\(\)\+\-\.]{7,20}$/.test(b.phoneNumber.trim())) return 'A valid phone number is required.';
+  if (!b.licenseImageData || !b.licenseImageData.startsWith('data:image/')) return 'A captured license photo is required.';
+  if (!b.signatureData    || !b.signatureData.startsWith('data:image/'))    return 'A driver signature is required.';
+  return null;
+}
 
 // ── POST /api/submit ───────────────────────────────────────
 app.post('/api/submit', async (req, res) => {
-  const body = req.body || {};
-  const errors = validateDriverForm(body);
-  if (errors.length)
-    return res.status(422).json({ success: false, message: errors[0], errors });
+  try {
+    const b   = req.body || {};
+    const err = validate(b);
+    if (err) return res.status(422).json({ success: false, message: err });
 
-  const { companyName, driverName, truckNumber, startTime,
-          numberOfDays, phoneNumber, signatureData, licenseImageData } = body;
+    const token     = uuidv4();
+    const expiresAt = new Date(new Date(b.startTime).getTime() + Number(b.numberOfDays) * 86400000);
+    const proto     = (req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const verifyUrl = `${proto}://${req.headers.host}/verify.html?token=${token}`;
 
-  const token     = uuidv4();
-  const startMs   = new Date(startTime).getTime();
-  const expiresAt = new Date(startMs + Number(numberOfDays) * 24 * 60 * 60 * 1000);
+    const qrDataURL = await QRCode.toDataURL(verifyUrl, {
+      errorCorrectionLevel: 'H', margin: 2, width: 300,
+      color: { dark: '#111111', light: '#FFFFFF' }
+    });
 
-  const protocol  = req.headers['x-forwarded-proto'] || 'https';
-  const host      = req.headers.host;
-  const verifyUrl = `${protocol}://${host}/verify.html?token=${token}`;
+    store.set(token, {
+      token,
+      expiresAt:    expiresAt.toISOString(),
+      submittedAt:  new Date().toISOString(),
+      companyName:  b.companyName.trim(),
+      driverName:   b.driverName.trim(),
+      truckNumber:  b.truckNumber.trim(),
+      startTime:    b.startTime,
+      numberOfDays: Number(b.numberOfDays),
+      phoneNumber:  b.phoneNumber.trim()
+    });
 
-  const qrDataURL = await QRCode.toDataURL(verifyUrl, {
-    errorCorrectionLevel: 'H',
-    margin: 2,
-    width: 300,
-    color: { dark: '#111111', light: '#FFFFFF' }
-  });
-
-  store.save(token, {
-    token,
-    expiresAt:    expiresAt.toISOString(),
-    submittedAt:  new Date().toISOString(),
-    companyName:  companyName.trim(),
-    driverName:   driverName.trim(),
-    truckNumber:  truckNumber.trim(),
-    startTime,
-    numberOfDays: Number(numberOfDays),
-    phoneNumber:  phoneNumber.trim()
-  });
-
-  // Fire-and-forget optional integrations
-  Promise.allSettled([
-    sendNotificationEmail(
-      { companyName, driverName, truckNumber, startTime,
-        numberOfDays, phoneNumber, signatureData, licenseImageData,
-        expiresAt: expiresAt.toISOString() },
-      qrDataURL
-    ).catch(e => console.warn('[Email]', e.message))
-  ]);
-
-  return res.status(200).json({
-    success:   true,
-    message:   'Driver record submitted successfully.',
-    token,
-    expiresAt: expiresAt.toISOString(),
-    qrDataURL,
-    driver: {
-      companyName:  companyName.trim(),
-      driverName:   driverName.trim(),
-      truckNumber:  truckNumber.trim(),
-      startTime,
-      numberOfDays: Number(numberOfDays),
-      phoneNumber:  phoneNumber.trim()
-    }
-  });
+    return res.json({
+      success: true,
+      message: 'Driver record submitted successfully.',
+      token,
+      expiresAt: expiresAt.toISOString(),
+      qrDataURL,
+      driver: {
+        companyName:  b.companyName.trim(),
+        driverName:   b.driverName.trim(),
+        truckNumber:  b.truckNumber.trim(),
+        startTime:    b.startTime,
+        numberOfDays: Number(b.numberOfDays),
+        phoneNumber:  b.phoneNumber.trim()
+      }
+    });
+  } catch (e) {
+    console.error('[submit]', e.message);
+    return res.status(500).json({ success: false, message: e.message });
+  }
 });
 
 // ── GET /api/verify/:token ─────────────────────────────────
 app.get('/api/verify/:token', (req, res) => {
-  const { token } = req.params;
-  const record    = store.findByToken(token);
-
-  if (!record)
-    return res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
-
-  const expired = new Date() > new Date(record.expiresAt);
-  return res.status(200).json({
-    valid:        !expired,
-    status:       expired ? 'expired' : 'active',
-    token:        record.token,
-    expiresAt:    record.expiresAt,
-    submittedAt:  record.submittedAt,
-    driverName:   record.driverName,
-    companyName:  record.companyName,
-    truckNumber:  record.truckNumber,
-    startTime:    record.startTime,
-    numberOfDays: record.numberOfDays,
-    phoneNumber:  record.phoneNumber
+  const rec = store.get(req.params.token);
+  if (!rec) return res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
+  const expired = new Date() > new Date(rec.expiresAt);
+  return res.json({
+    valid: !expired, status: expired ? 'expired' : 'active',
+    token: rec.token, expiresAt: rec.expiresAt, submittedAt: rec.submittedAt,
+    driverName: rec.driverName, companyName: rec.companyName,
+    truckNumber: rec.truckNumber, startTime: rec.startTime,
+    numberOfDays: rec.numberOfDays, phoneNumber: rec.phoneNumber
   });
 });
 
 // ── GET /api/health ────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'DFW Oil Energy Driver Tracking', time: new Date().toISOString() });
-});
+app.get('/api/health', (_req, res) =>
+  res.json({ status: 'ok', entries: store.size, time: new Date().toISOString() })
+);
 
 module.exports = app;
