@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DFW Oil Energy – Driver Tracking</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header / Branding -->
+  <header class="site-header">
+    <div class="header-inner">
+      <img src="assets/logo.jpg" alt="DFW Oil Energy Logo" class="logo" />
+      <div class="header-text">
+        <h1>DFW Oil Energy</h1>
+        <p class="subtitle">Wholesale Distributor — Driver Tracking Portal</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Form Card -->
+  <main class="main-content">
+    <div class="form-card">
+      <h2 class="form-title">Driver Trip Registration</h2>
+      <p class="form-desc">All fields are required. Please fill out every section before submitting.</p>
+
+      <!-- Success / Error banners (hidden by default) -->
+      <div id="success-banner" class="banner banner-success" role="alert" hidden>
+        <span>&#10003;</span> Form submitted successfully! A confirmation email has been sent.
+      </div>
+      <div id="error-banner" class="banner banner-error" role="alert" hidden>
+        <span>&#9888;</span> <span id="error-message">An error occurred. Please try again.</span>
+      </div>
+
+      <form id="driver-form" novalidate enctype="multipart/form-data">
+
+        <!-- Row 1: Company Name & Driver Name -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="companyName">Company Name <span class="req">*</span></label>
+            <input type="text" id="companyName" name="companyName"
+                   placeholder="e.g. DFW Oil Energy"
+                   autocomplete="organization" required />
+            <span class="field-error" id="err-companyName"></span>
+          </div>
+          <div class="form-group">
+            <label for="driverName">Driver Name <span class="req">*</span></label>
+            <input type="text" id="driverName" name="driverName"
+                   placeholder="Full name"
+                   autocomplete="name" required />
+            <span class="field-error" id="err-driverName"></span>
+          </div>
+        </div>
+
+        <!-- Row 2: Truck Number & Phone Number -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="truckNumber">Truck Number <span class="req">*</span></label>
+            <input type="text" id="truckNumber" name="truckNumber"
+                   placeholder="e.g. TRK-0042"
+                   pattern="[A-Za-z0-9\-]+" required />
+            <span class="field-error" id="err-truckNumber"></span>
+          </div>
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number <span class="req">*</span></label>
+            <input type="tel" id="phoneNumber" name="phoneNumber"
+                   placeholder="e.g. (214) 555-0100"
+                   autocomplete="tel" required />
+            <span class="field-error" id="err-phoneNumber"></span>
+          </div>
+        </div>
+
+        <!-- Row 3: Start Time & Number of Days -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startTime">Start Time <span class="req">*</span></label>
+            <input type="datetime-local" id="startTime" name="startTime" required />
+            <span class="field-error" id="err-startTime"></span>
+          </div>
+          <div class="form-group">
+            <label for="numberOfDays">Number of Days <span class="req">*</span></label>
+            <input type="number" id="numberOfDays" name="numberOfDays"
+                   min="1" max="365" placeholder="e.g. 3" required />
+            <span class="field-error" id="err-numberOfDays"></span>
+          </div>
+        </div>
+
+        <!-- Scan License – Camera Capture -->
+        <div class="form-group full-width">
+          <label>Scan License <span class="req">*</span></label>
+
+          <!-- Step 1: Open Camera button -->
+          <div class="camera-idle" id="camera-idle">
+            <button type="button" id="open-camera-btn" class="btn-open-camera">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              Open Camera to Scan License
+            </button>
+          </div>
+
+          <!-- Step 2: Live camera preview -->
+          <div class="camera-preview-wrap" id="camera-preview-wrap" hidden>
+            <video id="camera-video" class="camera-video" autoplay playsinline muted></video>
+            <div class="camera-overlay">
+              <div class="camera-frame">
+                <span class="frame-label">Position license inside the frame</span>
+              </div>
+            </div>
+            <div class="camera-controls">
+              <button type="button" id="switch-camera-btn" class="btn-cam-action btn-switch" title="Switch camera">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+              </button>
+              <button type="button" id="capture-btn" class="btn-capture">
+                <span class="capture-ring"></span>
+              </button>
+              <button type="button" id="cancel-camera-btn" class="btn-cam-action btn-cancel-cam" title="Cancel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Captured photo preview -->
+          <div class="camera-captured" id="camera-captured" hidden>
+            <img id="captured-img" class="captured-img" alt="Captured license" />
+            <div class="captured-toolbar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:#43A047;flex-shrink:0">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="captured-label">License photo captured</span>
+              <button type="button" id="retake-btn" class="btn-retake">&#8635; Retake</button>
+            </div>
+          </div>
+
+          <!-- Hidden input carries the base64 image data to the server -->
+          <input type="hidden" id="licenseImageData" name="licenseImageData" />
+          <span class="field-error" id="err-scanLicense"></span>
+        </div>
+
+        <!-- Digital Signature -->
+        <div class="form-group full-width">
+          <label>Driver Signature <span class="req">*</span></label>
+          <div class="signature-container">
+            <canvas id="signature-pad" class="signature-pad" aria-label="Signature drawing area"></canvas>
+            <div class="signature-toolbar">
+              <span class="sig-hint">Sign above with mouse or touch</span>
+              <button type="button" id="clear-signature" class="btn-clear-sig">&#8635; Clear</button>
+            </div>
+          </div>
+          <input type="hidden" id="signatureData" name="signatureData" />
+          <span class="field-error" id="err-signatureData"></span>
+        </div>
+
+        <!-- Submit -->
+        <div class="form-group full-width submit-row">
+          <button type="submit" id="submit-btn" class="btn-submit">
+            <span id="btn-text">Submit Driver Record</span>
+            <span id="btn-spinner" class="spinner" hidden></span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 DFW Oil Energy — Wholesale Distributor. All rights reserved.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

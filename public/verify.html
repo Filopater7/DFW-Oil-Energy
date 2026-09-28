@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DFW Oil Energy – Verify Driver Pass</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .verify-wrap {
+      max-width: 540px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Status card */
+    .status-card {
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 24px;
+      animation: slideIn 0.35s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Active (green) */
+    .status-card.active {
+      border: 2px solid #43A047;
+      background: rgba(67,160,71,0.08);
+    }
+    .status-card.active .status-header {
+      background: linear-gradient(90deg, #2E7D32, #43A047);
+    }
+
+    /* Expired (red) */
+    .status-card.expired {
+      border: 2px solid var(--error);
+      background: rgba(229,57,53,0.08);
+    }
+    .status-card.expired .status-header {
+      background: linear-gradient(90deg, #b71c1c, var(--error));
+    }
+
+    /* Not found (orange) */
+    .status-card.not-found {
+      border: 2px solid var(--orange);
+      background: rgba(224,123,32,0.08);
+    }
+    .status-card.not-found .status-header {
+      background: linear-gradient(90deg, #bf360c, var(--orange));
+    }
+
+    .status-header {
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .status-icon {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .status-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .status-sub {
+      font-size: 0.84rem;
+      color: rgba(255,255,255,0.8);
+      margin-top: 3px;
+    }
+
+    /* Driver info grid */
+    .driver-info {
+      padding: 20px 22px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .info-item {}
+    .info-item .info-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .info-item .info-value {
+      font-size: 0.97rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .info-item.full { grid-column: 1 / -1; }
+
+    /* Expiry row */
+    .expiry-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 22px;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .expiry-row .exp-label { color: var(--muted); }
+    .expiry-row .exp-value {
+      font-weight: 700;
+    }
+    .active  .exp-value { color: #81C784; }
+    .expired .exp-value { color: #EF9A9A; }
+
+    /* Countdown inside verify */
+    .verify-countdown {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 16px 22px;
+      border-top: 1px solid var(--border);
+    }
+    .vc-cell {
+      display: flex; flex-direction: column; align-items: center;
+      background: #1a1a1a; border: 1px solid var(--border);
+      border-radius: 7px; padding: 8px 12px; min-width: 52px;
+    }
+    .vc-cell .num {
+      font-size: 1.4rem; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--gold); line-height: 1;
+    }
+    .vc-cell .unit {
+      font-size: 0.65rem; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--muted); margin-top: 3px;
+    }
+
+    /* Loading spinner */
+    .verify-loading {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .verify-loading .spinner {
+      margin: 0 auto 16px;
+      border-color: rgba(201,168,76,0.3);
+      border-top-color: var(--gold);
+      width: 40px; height: 40px;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+      margin-top: 12px;
+    }
+    .btn-back:hover { border-color: var(--gold); color: var(--gold); }
+
+    @media (max-width: 480px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .info-item.full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <img src="assets/logo.jpg" alt="DFW Oil Energy Logo" class="logo" />
+      <div class="header-text">
+        <h1>DFW Oil Energy</h1>
+        <p class="subtitle">Wholesale Distributor — Driver Pass Verification</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="verify-wrap">
+
+      <!-- Loading -->
+      <div class="verify-loading" id="verify-loading">
+        <div class="spinner"></div>
+        <p style="color:var(--muted);">Verifying driver pass…</p>
+      </div>
+
+      <!-- Result (filled by JS) -->
+      <div id="verify-result" hidden></div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 DFW Oil Energy — Wholesale Distributor. All rights reserved.</p>
+  </footer>
+
+  <script>
+  (() => {
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+    const loadEl = document.getElementById('verify-loading');
+    const resEl  = document.getElementById('verify-result');
+
+    if (!token) {
+      showError('No token provided. Please scan a valid QR code.');
+      return;
+    }
+
+    fetch(`/api/verify/${encodeURIComponent(token)}`)
+      .then(r => r.json())
+      .then(data => {
+        loadEl.hidden = true;
+        resEl.hidden  = false;
+        if (data.status === 'active')    renderActive(data);
+        else if (data.status === 'expired')  renderExpired(data);
+        else                                 renderNotFound();
+      })
+      .catch(() => showError('Network error. Could not verify the pass.'));
+
+    // ── ACTIVE ────────────────────────────────────────────────
+    function renderActive(d) {
+      const expiresAt = new Date(d.expiresAt);
+      resEl.innerHTML = `
+        <div class="status-card active">
+          <div class="status-header">
+            <div class="status-icon">✓</div>
+            <div>
+              <div class="status-title">PASS VALID</div>
+              <div class="status-sub">This driver is authorized for the current trip</div>
+            </div>
+          </div>
+          <div class="driver-info">
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">Driver Name</div><div class="info-value">${esc(d.driverName)}</div></div>
+              <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
+              <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
+              <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
+              <div class="info-item"><div class="info-label">Start Time</div><div class="info-value">${new Date(d.startTime).toLocaleString()}</div></div>
+              <div class="info-item"><div class="info-label">Trip Duration</div><div class="info-value">${d.numberOfDays} day${d.numberOfDays !== 1 ? 's' : ''}</div></div>
+            </div>
+          </div>
+          <div class="expiry-row">
+            <span class="exp-label">Pass expires</span>
+            <span class="exp-value" id="expiry-display">${expiresAt.toLocaleString()}</span>
+          </div>
+          <div class="verify-countdown" id="countdown-row">
+            <div class="vc-cell"><span class="num" id="vd">--</span><span class="unit">Days</span></div>
+            <div class="vc-cell"><span class="num" id="vh">--</span><span class="unit">Hrs</span></div>
+            <div class="vc-cell"><span class="num" id="vm">--</span><span class="unit">Min</span></div>
+            <div class="vc-cell"><span class="num" id="vs">--</span><span class="unit">Sec</span></div>
+          </div>
+        </div>
+        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+      `;
+
+      // Start countdown
+      function pad(n) { return String(n).padStart(2,'0'); }
+      function tick() {
+        const diff = expiresAt - Date.now();
+        if (diff <= 0) {
+          document.getElementById('countdown-row').innerHTML =
+            '<p style="color:var(--error);font-weight:700;padding:8px;">Pass just expired</p>';
+          document.querySelector('.status-card').className = 'status-card expired';
+          return;
+        }
+        const s = Math.floor(diff/1000);
+        document.getElementById('vd').textContent = pad(Math.floor(s/86400));
+        document.getElementById('vh').textContent = pad(Math.floor((s%86400)/3600));
+        document.getElementById('vm').textContent = pad(Math.floor((s%3600)/60));
+        document.getElementById('vs').textContent = pad(s%60);
+      }
+      tick(); setInterval(tick, 1000);
+    }
+
+    // ── EXPIRED ───────────────────────────────────────────────
+    function renderExpired(d) {
+      const expiresAt = new Date(d.expiresAt);
+      resEl.innerHTML = `
+        <div class="status-card expired">
+          <div class="status-header">
+            <div class="status-icon">✗</div>
+            <div>
+              <div class="status-title">PASS EXPIRED</div>
+              <div class="status-sub">This driver's trip period has ended</div>
+            </div>
+          </div>
+          <div class="driver-info">
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">Driver Name</div><div class="info-value">${esc(d.driverName)}</div></div>
+              <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
+              <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
+              <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
+              <div class="info-item full"><div class="info-label">Trip was</div><div class="info-value">${d.numberOfDays} day${d.numberOfDays !== 1 ? 's' : ''} from ${new Date(d.startTime).toLocaleString()}</div></div>
+            </div>
+          </div>
+          <div class="expiry-row">
+            <span class="exp-label">Expired on</span>
+            <span class="exp-value">${expiresAt.toLocaleString()}</span>
+          </div>
+        </div>
+        <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
+          Driver must submit a new record to get an active pass.
+        </p>
+        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+      `;
+    }
+
+    // ── NOT FOUND ─────────────────────────────────────────────
+    function renderNotFound() {
+      resEl.innerHTML = `
+        <div class="status-card not-found">
+          <div class="status-header">
+            <div class="status-icon">?</div>
+            <div>
+              <div class="status-title">PASS NOT FOUND</div>
+              <div class="status-sub">This QR code is not registered in our system</div>
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
+          The QR code may be invalid, tampered with, or from an older system.
+        </p>
+        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+      `;
+    }
+
+    function showError(msg) {
+      loadEl.hidden = true;
+      resEl.hidden  = false;
+      resEl.innerHTML = `
+        <div style="text-align:center;padding:40px;">
+          <p style="font-size:2rem;">⚠️</p>
+          <p style="color:var(--error);font-weight:600;margin-top:8px;">${esc(msg)}</p>
+          <a href="index.html" class="btn-back" style="margin-top:20px;display:inline-flex;">← Back</a>
+        </div>`;
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  })();
+  </script>
+</body>
+</html>

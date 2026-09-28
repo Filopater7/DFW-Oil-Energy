@@ -1,0 +1,36 @@
+{
+  "name": "dfw-oil-energy-driver-tracking",
+  "version": "1.0.0",
+  "description": "DFW Oil Energy – Driver Tracking Portal with Google Sheets and Email integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "dfw",
+    "oil",
+    "energy",
+    "driver",
+    "tracking"
+  ],
+  "author": "DFW Oil Energy",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "express": "^4.22.3",
+    "express-rate-limit": "7.3.1",
+    "googleapis": "^182.0.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.11",
+    "qrcode": "^1.5.4",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

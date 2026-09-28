@@ -1,0 +1,503 @@
+/* ============================================================
+   DFW Oil Energy – Driver Tracking Portal
+   Brand palette:
+     Black  : #111111
+     Gold   : #C9A84C
+     Orange : #E07B20
+     Green  : #2E7D32
+     White  : #FFFFFF
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:   #111111;
+  --gold:    #C9A84C;
+  --gold-lt: #E4C77A;
+  --orange:  #E07B20;
+  --green:   #2E7D32;
+  --white:   #FFFFFF;
+  --bg:      #1a1a1a;
+  --card-bg: #222222;
+  --border:  #3a3a3a;
+  --text:    #EEEEEE;
+  --muted:   #999999;
+  --error:   #E53935;
+  --success: #43A047;
+  --radius:  10px;
+  --shadow:  0 8px 32px rgba(0,0,0,0.55);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.site-header {
+  background: linear-gradient(135deg, #0d0d0d 0%, #1c1c1c 60%, #111 100%);
+  border-bottom: 3px solid var(--gold);
+  padding: 18px 32px;
+}
+
+.header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(201,168,76,0.4);
+}
+
+.header-text h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-lt) 60%, var(--orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.header-text .subtitle {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* ── MAIN CONTENT ───────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  padding: 40px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ── FORM CARD ──────────────────────────────────────────── */
+.form-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--gold);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 40px 40px 48px;
+  width: 100%;
+  max-width: 860px;
+}
+
+.form-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.form-desc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+
+/* ── BANNERS ────────────────────────────────────────────── */
+.banner {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.banner-success {
+  background: rgba(67,160,71,0.15);
+  border: 1px solid var(--success);
+  color: #81C784;
+}
+
+.banner-error {
+  background: rgba(229,57,53,0.15);
+  border: 1px solid var(--error);
+  color: #EF9A9A;
+}
+
+/* ── FORM GRID ──────────────────────────────────────────── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  margin-bottom: 20px;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold-lt);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.req { color: var(--orange); }
+
+input[type="text"],
+input[type="tel"],
+input[type="number"],
+input[type="datetime-local"] {
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 0.98rem;
+  padding: 11px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+}
+
+input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.18);
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+input.invalid { border-color: var(--error) !important; }
+
+.field-error {
+  font-size: 0.78rem;
+  color: var(--error);
+  min-height: 16px;
+}
+
+/* ── CAMERA CAPTURE ─────────────────────────────────────── */
+
+/* Idle state – "Open Camera" button */
+.camera-idle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: #1a1a1a;
+  padding: 28px 16px;
+  transition: border-color 0.2s;
+}
+
+.camera-idle:hover { border-color: var(--gold); }
+
+.btn-open-camera {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-open-camera:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+.btn-open-camera svg { flex-shrink: 0; }
+
+/* Live camera preview */
+.camera-preview-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  border: 2px solid var(--border);
+}
+
+.camera-video {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Guide overlay frame */
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.camera-frame {
+  width: 82%;
+  height: 58%;
+  border: 2.5px solid var(--gold);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.38);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.frame-label {
+  background: rgba(0,0,0,0.55);
+  color: var(--gold-lt);
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* Camera controls bar */
+.camera-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 14px 20px 18px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.75));
+}
+
+/* Side action buttons (switch / cancel) */
+.btn-cam-action {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-cam-action:hover { background: rgba(255,255,255,0.18); border-color: #fff; }
+
+/* Shutter button */
+.btn-capture {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 3px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.2s;
+}
+
+.btn-capture:hover  { background: rgba(255,255,255,0.28); }
+.btn-capture:active { transform: scale(0.93); }
+
+.capture-ring {
+  display: block;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.btn-capture:hover .capture-ring { background: var(--gold-lt); }
+
+/* Captured photo preview */
+.camera-captured {
+  border: 2px solid var(--green);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #111;
+}
+
+.captured-img {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  background: #000;
+}
+
+.captured-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #1e1e1e;
+  border-top: 1px solid var(--border);
+}
+
+.captured-label {
+  font-size: 0.88rem;
+  color: #81C784;
+  flex: 1;
+}
+
+.btn-retake {
+  background: none;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 0.82rem;
+  padding: 5px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-retake:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+/* ── SIGNATURE PAD ──────────────────────────────────────── */
+.signature-container {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #f9f9f9;
+}
+
+.signature-pad {
+  display: block;
+  width: 100%;
+  height: 180px;
+  cursor: crosshair;
+  background: #ffffff;
+  touch-action: none;
+}
+
+.signature-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2a2a2a;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.sig-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.btn-clear-sig {
+  background: none;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 0.82rem;
+  padding: 5px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-clear-sig:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+/* ── SUBMIT BUTTON ──────────────────────────────────────── */
+.submit-row { margin-top: 12px; }
+
+.btn-submit {
+  width: 100%;
+  padding: 15px 24px;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--orange) 100%);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--black);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(17,17,17,0.3);
+  border-top-color: var(--black);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FOOTER ─────────────────────────────────────────────── */
+.site-footer {
+  background: #0d0d0d;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .form-card { padding: 24px 18px 32px; }
+  .form-row { grid-template-columns: 1fr; }
+  .header-text h1 { font-size: 1.4rem; }
+  .logo { width: 68px; height: 68px; }
+}

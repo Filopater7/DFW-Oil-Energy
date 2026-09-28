@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DFW Oil Energy – Submission Confirmed</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Confirmation-page extras ── */
+    .confirm-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Success header badge */
+    .success-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+    .success-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(67,160,71,0.15);
+      border: 3px solid #43A047;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      animation: pop 0.4s ease;
+    }
+    @keyframes pop {
+      0%  { transform: scale(0.5); opacity: 0; }
+      80% { transform: scale(1.08); }
+      100%{ transform: scale(1);   opacity: 1; }
+    }
+    .success-badge h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #81C784;
+      margin: 0;
+    }
+    .success-badge p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* Detail table */
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+      margin-bottom: 28px;
+    }
+    .detail-table tr { border-bottom: 1px solid var(--border); }
+    .detail-table tr:last-child { border-bottom: none; }
+    .detail-table td { padding: 10px 8px; }
+    .detail-table td:first-child {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 38%;
+    }
+    .detail-table td:last-child { font-weight: 600; }
+
+    /* QR section */
+    .qr-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      margin-bottom: 24px;
+    }
+    .qr-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gold);
+    }
+    .qr-img-wrap {
+      background: #fff;
+      padding: 14px;
+      border-radius: 12px;
+      box-shadow: 0 0 24px rgba(201,168,76,0.25);
+    }
+    .qr-img-wrap img {
+      display: block;
+      width: 220px; height: 220px;
+    }
+    .qr-note {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 320px;
+    }
+
+    /* Expiry badge */
+    .expiry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(224,123,32,0.12);
+      border: 1px solid var(--orange);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--orange);
+    }
+
+    /* Countdown */
+    .countdown-wrap {
+      text-align: center;
+    }
+    .countdown-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .countdown-grid {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .countdown-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 56px;
+    }
+    .countdown-cell .num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .countdown-cell .unit {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .countdown-expired {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--error);
+      letter-spacing: 0.5px;
+    }
+
+    /* Download / Print button */
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px;
+      background: none;
+      border: 2px solid var(--gold);
+      border-radius: var(--radius);
+      color: var(--gold);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+      margin-bottom: 12px;
+    }
+    .btn-download:hover { background: var(--gold); color: var(--black); }
+
+    .btn-new {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(90deg, var(--gold), var(--orange));
+      border: none;
+      border-radius: var(--radius);
+      color: var(--black);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn-new:hover { opacity: 0.88; }
+
+    @media print {
+      .site-header, .site-footer, .btn-download, .btn-new { display: none !important; }
+      body { background: #fff; color: #000; }
+      .form-card { box-shadow: none; border: 1px solid #ccc; }
+      .qr-section { border-color: #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <img src="assets/logo.jpg" alt="DFW Oil Energy Logo" class="logo" />
+      <div class="header-text">
+        <h1>DFW Oil Energy</h1>
+        <p class="subtitle">Wholesale Distributor — Driver Tracking Portal</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="confirm-wrap">
+      <div class="form-card" id="confirm-card">
+
+        <!-- Loading state -->
+        <div id="loading-state" style="text-align:center;padding:40px;">
+          <div class="spinner" style="margin:0 auto;border-color:rgba(201,168,76,0.3);border-top-color:var(--gold);width:36px;height:36px;"></div>
+          <p style="margin-top:16px;color:var(--muted);">Loading your confirmation…</p>
+        </div>
+
+        <!-- Confirmation content (filled by JS) -->
+        <div id="confirm-content" hidden>
+
+          <div class="success-badge">
+            <div class="success-icon">✓</div>
+            <h2>Submission Confirmed!</h2>
+            <p>Your driver record has been saved. Keep this QR pass for verification.</p>
+          </div>
+
+          <!-- Driver details -->
+          <table class="detail-table" id="detail-table"></table>
+
+          <!-- QR code -->
+          <div class="qr-section">
+            <span class="qr-label">&#9646; Driver QR Pass</span>
+            <div class="qr-img-wrap">
+              <img id="qr-image" src="" alt="Driver QR Pass" />
+            </div>
+            <div class="expiry-badge">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Expires: <span id="expiry-text">—</span>
+            </div>
+            <div class="countdown-wrap">
+              <p class="countdown-label">Time remaining</p>
+              <div class="countdown-grid" id="countdown-grid">
+                <div class="countdown-cell"><span class="num" id="cd-days">--</span><span class="unit">Days</span></div>
+                <div class="countdown-cell"><span class="num" id="cd-hours">--</span><span class="unit">Hrs</span></div>
+                <div class="countdown-cell"><span class="num" id="cd-mins">--</span><span class="unit">Min</span></div>
+                <div class="countdown-cell"><span class="num" id="cd-secs">--</span><span class="unit">Sec</span></div>
+              </div>
+            </div>
+            <p class="qr-note">Show this QR code at checkpoints. It will automatically expire after your trip period ends.</p>
+          </div>
+
+          <!-- Actions -->
+          <button class="btn-download" onclick="window.print()">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            Print / Save as PDF
+          </button>
+          <a href="index.html" class="btn-new">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Submit Another Record
+          </a>
+
+        </div>
+
+        <!-- Error state -->
+        <div id="error-state" hidden style="text-align:center;padding:40px;">
+          <p style="font-size:2rem;">⚠️</p>
+          <p style="color:var(--error);font-weight:600;margin-top:8px;">Could not load confirmation data.</p>
+          <a href="index.html" class="btn-new" style="margin-top:20px;display:inline-flex;">Back to Form</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 DFW Oil Energy — Wholesale Distributor. All rights reserved.</p>
+  </footer>
+
+  <script>
+  (() => {
+    const KEY = 'dfw_confirm_data';
+
+    // Read data passed from app.js via sessionStorage
+    let data;
+    try {
+      data = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+    } catch { data = null; }
+
+    const loading  = document.getElementById('loading-state');
+    const content  = document.getElementById('confirm-content');
+    const errState = document.getElementById('error-state');
+
+    if (!data || !data.qrDataURL) {
+      loading.hidden  = true;
+      errState.hidden = false;
+      return;
+    }
+
+    // ── Populate driver details table ──
+    const table  = document.getElementById('detail-table');
+    const driver = data.driver;
+    const rows = [
+      ['Company',      driver.companyName],
+      ['Driver Name',  driver.driverName],
+      ['Truck Number', driver.truckNumber],
+      ['Start Time',   new Date(driver.startTime).toLocaleString()],
+      ['Trip Duration', `${driver.numberOfDays} day${driver.numberOfDays !== 1 ? 's' : ''}`],
+      ['Phone',        driver.phoneNumber]
+    ];
+    table.innerHTML = rows.map(([label, value]) =>
+      `<tr><td>${label}</td><td>${escHtml(value)}</td></tr>`
+    ).join('');
+
+    // ── QR image ──
+    document.getElementById('qr-image').src = data.qrDataURL;
+
+    // ── Expiry display ──
+    const expiresAt = new Date(data.expiresAt);
+    document.getElementById('expiry-text').textContent = expiresAt.toLocaleString();
+
+    // ── Countdown timer ──
+    const cdDays  = document.getElementById('cd-days');
+    const cdHours = document.getElementById('cd-hours');
+    const cdMins  = document.getElementById('cd-mins');
+    const cdSecs  = document.getElementById('cd-secs');
+    const grid    = document.getElementById('countdown-grid');
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tick() {
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) {
+        grid.innerHTML = `<p class="countdown-expired">&#10007; QR Pass Expired</p>`;
+        return;
+      }
+      const totalSec = Math.floor(diff / 1000);
+      const d = Math.floor(totalSec / 86400);
+      const h = Math.floor((totalSec % 86400) / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      cdDays.textContent  = pad(d);
+      cdHours.textContent = pad(h);
+      cdMins.textContent  = pad(m);
+      cdSecs.textContent  = pad(s);
+    }
+
+    tick();
+    setInterval(tick, 1000);
+
+    // ── Show content ──
+    loading.hidden = true;
+    content.hidden = false;
+
+    // Clear sessionStorage so it can't be replayed
+    sessionStorage.removeItem(KEY);
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  })();
+  </script>
+</body>
+</html>

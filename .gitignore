@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit real credentials)
+.env
+
+# Uploaded files (driver licenses, signatures) — keep folder, ignore contents
+uploads/*
+!uploads/.gitkeep
+
+# Runtime data — keep folder, ignore submissions file
+data/submissions.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build output
+dist/
