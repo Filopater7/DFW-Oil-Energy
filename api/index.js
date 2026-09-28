@@ -4,8 +4,15 @@
 'use strict';
 
 const express        = require('express');
-const { v4: uuidv4 } = require('uuid');
 const QRCode         = require('qrcode');
+
+// Inline UUID v4 — no dependency needed
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 
 const app = express();
 app.use(express.json({ limit: '15mb' }));
