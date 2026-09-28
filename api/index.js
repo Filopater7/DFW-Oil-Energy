@@ -52,7 +52,10 @@ app.post('/api/submit', async (req, res) => {
 
     // Generate token and expiry
     const token     = uuidv4();
-    const expiresAt = new Date(new Date(b.startTime).getTime() + days * 86400000);
+    // Convert local startTime to UTC using browser's timezone offset
+    const tzOffset  = Number(b.tzOffset) || 0;  // minutes behind UTC
+    const startUTC  = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
+    const expiresAt = new Date(startUTC.getTime() + days * 86400000);
 
     // Build verify URL
     const proto     = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();

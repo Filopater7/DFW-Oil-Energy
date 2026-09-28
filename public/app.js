@@ -259,7 +259,8 @@
         numberOfDays:     document.getElementById('numberOfDays').value,
         phoneNumber:      document.getElementById('phoneNumber').value,
         licenseImageData: licenseImageData.value,
-        signatureData:    sigInput.value
+        signatureData:    sigInput.value,
+        tzOffset:         new Date().getTimezoneOffset()  // minutes behind UTC (e.g. -180 for UTC+3)
       };
 
       const response = await fetch('/api/submit', {
