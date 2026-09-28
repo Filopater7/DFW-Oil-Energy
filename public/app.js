@@ -126,25 +126,6 @@
   // Open camera
   openCameraBtn.addEventListener('click', () => startCamera(facingMode));
 
-  // File upload fallback
-  const licenseFileInput = document.getElementById('licenseFileInput');
-  if (licenseFileInput) {
-    licenseFileInput.addEventListener('change', () => {
-      const file = licenseFileInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        licenseImageData.value = ev.target.result;
-        capturedImg.src        = ev.target.result;
-        licenseCaptured        = true;
-        cameraCaptured.hidden  = false;
-        cameraIdle.hidden      = true;
-        clearFieldError('scanLicense');
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
   // Switch between front / rear camera
   switchCameraBtn.addEventListener('click', () => {
     startCamera(facingMode === 'environment' ? 'user' : 'environment');
