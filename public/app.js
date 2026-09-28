@@ -272,14 +272,13 @@
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Store in localStorage (survives refresh) and redirect
-        localStorage.setItem('dfw_confirm_data', JSON.stringify({
+        sessionStorage.setItem('dfw_confirm_data', JSON.stringify({
           qrDataURL: result.qrDataURL,
           token:     result.token,
           expiresAt: result.expiresAt,
           driver:    result.driver
         }));
-        window.location.href = 'confirm.html?token=' + result.token;
+        window.location.href = 'confirm.html';
       } else {
         showError(result.message || 'Submission failed. Please try again.');
       }

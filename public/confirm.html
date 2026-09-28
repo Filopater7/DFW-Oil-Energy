@@ -306,83 +306,79 @@
 
   <script>
   (() => {
-    const KEY = 'dfw_confirm_data';
-
-    // Read data passed from app.js via sessionStorage
-    let data;
-    try {
-      data = JSON.parse(sessionStorage.getItem(KEY) || 'null');
-    } catch { data = null; }
-
+    const KEY      = 'dfw_confirm_data';
     const loading  = document.getElementById('loading-state');
     const content  = document.getElementById('confirm-content');
     const errState = document.getElementById('error-state');
 
-    if (!data || !data.qrDataURL) {
+    // Load data: sessionStorage (fresh submit) → localStorage (refresh)
+    let data = null;
+    try { data = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch {}
+    if (!data) { try { data = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {} }
+
+    if (data && data.qrDataURL) {
+      // Persist to localStorage so page refresh still works
+      localStorage.setItem(KEY, JSON.stringify(data));
+      sessionStorage.removeItem(KEY);
+      render(data);
+    } else {
       loading.hidden  = true;
       errState.hidden = false;
-      return;
     }
 
-    // ── Populate driver details table ──
-    const table  = document.getElementById('detail-table');
-    const driver = data.driver;
-    const rows = [
-      ['Company',      driver.companyName],
-      ['Driver Name',  driver.driverName],
-      ['Truck Number', driver.truckNumber],
-      ['Start Time',   new Date(driver.startTime).toLocaleString()],
-      ['Trip Duration', `${driver.numberOfDays} day${driver.numberOfDays !== 1 ? 's' : ''}`],
-      ['Phone',        driver.phoneNumber]
-    ];
-    table.innerHTML = rows.map(([label, value]) =>
-      `<tr><td>${label}</td><td>${escHtml(value)}</td></tr>`
-    ).join('');
+    function render(d) {
+      const driver = d.driver;
 
-    // ── QR image ──
-    document.getElementById('qr-image').src = data.qrDataURL;
+      // Driver details table
+      const table = document.getElementById('detail-table');
+      const rows  = [
+        ['Company',       driver.companyName],
+        ['Driver Name',   driver.driverName],
+        ['Truck Number',  driver.truckNumber],
+        ['Start Time',    new Date(driver.startTime).toLocaleString()],
+        ['Trip Duration', `${driver.numberOfDays} day${driver.numberOfDays !== 1 ? 's' : ''}`],
+        ['Phone',         driver.phoneNumber]
+      ];
+      table.innerHTML = rows.map(([label, value]) =>
+        `<tr><td>${esc(label)}</td><td>${esc(String(value))}</td></tr>`
+      ).join('');
 
-    // ── Expiry display ──
-    const expiresAt = new Date(data.expiresAt);
-    document.getElementById('expiry-text').textContent = expiresAt.toLocaleString();
+      // QR image
+      document.getElementById('qr-image').src = d.qrDataURL;
 
-    // ── Countdown timer ──
-    const cdDays  = document.getElementById('cd-days');
-    const cdHours = document.getElementById('cd-hours');
-    const cdMins  = document.getElementById('cd-mins');
-    const cdSecs  = document.getElementById('cd-secs');
-    const grid    = document.getElementById('countdown-grid');
+      // Expiry display
+      const expiresAt = new Date(d.expiresAt);
+      document.getElementById('expiry-text').textContent = expiresAt.toLocaleString();
 
-    function pad(n) { return String(n).padStart(2, '0'); }
+      // Countdown timer
+      const cdDays  = document.getElementById('cd-days');
+      const cdHours = document.getElementById('cd-hours');
+      const cdMins  = document.getElementById('cd-mins');
+      const cdSecs  = document.getElementById('cd-secs');
+      const grid    = document.getElementById('countdown-grid');
 
-    function tick() {
-      const diff = expiresAt - Date.now();
-      if (diff <= 0) {
-        grid.innerHTML = `<p class="countdown-expired">&#10007; QR Pass Expired</p>`;
-        return;
+      function pad(n) { return String(n).padStart(2, '0'); }
+
+      function tick() {
+        const diff = expiresAt - Date.now();
+        if (diff <= 0) {
+          grid.innerHTML = '<p class="countdown-expired">&#10007; QR Pass Expired</p>';
+          return;
+        }
+        const s = Math.floor(diff / 1000);
+        cdDays.textContent  = pad(Math.floor(s / 86400));
+        cdHours.textContent = pad(Math.floor((s % 86400) / 3600));
+        cdMins.textContent  = pad(Math.floor((s % 3600) / 60));
+        cdSecs.textContent  = pad(s % 60);
       }
-      const totalSec = Math.floor(diff / 1000);
-      const d = Math.floor(totalSec / 86400);
-      const h = Math.floor((totalSec % 86400) / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      const s = totalSec % 60;
-      cdDays.textContent  = pad(d);
-      cdHours.textContent = pad(h);
-      cdMins.textContent  = pad(m);
-      cdSecs.textContent  = pad(s);
+      tick();
+      setInterval(tick, 1000);
+
+      loading.hidden = true;
+      content.hidden = false;
     }
 
-    tick();
-    setInterval(tick, 1000);
-
-    // ── Show content ──
-    loading.hidden = true;
-    content.hidden = false;
-
-    // Clear sessionStorage so it can't be replayed
-    sessionStorage.removeItem(KEY);
-
-    function escHtml(str) {
+    function esc(str) {
       return String(str)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
