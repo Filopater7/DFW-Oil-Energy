@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/api/verify/(.+)", "dest": "/api/verify/[token].js" },
+    { "src": "/api/submit",      "dest": "/api/submit.js" },
+    { "src": "/api/health",      "dest": "/api/health.js" },
+    { "src": "/(.*)",            "dest": "/public/$1" }
+  ]
+}
