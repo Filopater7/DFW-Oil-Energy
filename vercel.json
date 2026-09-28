@@ -1,8 +1,12 @@
 {
   "version": 2,
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "",
   "outputDirectory": "public",
   "functions": {
     "api/**/*.js": {
+      "runtime": "nodejs22.x",
       "maxDuration": 30
     }
   },
