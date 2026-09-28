@@ -1,17 +1,11 @@
 {
   "version": 2,
-  "framework": null,
-  "installCommand": "npm install",
-  "buildCommand": "",
-  "outputDirectory": "public",
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    { "source": "/api/verify/:token", "destination": "/api/verify/[token].js" },
-    { "source": "/api/submit",        "destination": "/api/submit.js" },
-    { "source": "/api/health",        "destination": "/api/health.js" }
+  "builds": [
+    { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "public/**",    "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/(.*)",     "dest": "/public/$1" }
   ]
 }
