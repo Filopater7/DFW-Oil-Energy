@@ -105,16 +105,16 @@
     /* Action buttons */
     .btn-approve {
       background: rgba(67,160,71,0.15); border: 1px solid #43A047;
-      color: #81C784; padding: 5px 14px; border-radius: 6px;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      color: #81C784; padding: 4px 12px; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
       transition: background 0.2s; white-space: nowrap;
     }
     .btn-approve:hover { background: rgba(67,160,71,0.35); }
     .btn-reject {
       background: rgba(229,57,53,0.1); border: 1px solid var(--error);
-      color: #EF9A9A; padding: 5px 14px; border-radius: 6px;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer;
-      transition: background 0.2s; white-space: nowrap; margin-left: 6px;
+      color: #EF9A9A; padding: 4px 12px; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap;
     }
     .btn-reject:hover { background: rgba(229,57,53,0.25); }
 
@@ -247,7 +247,6 @@
                 <th>Duration</th>
                 <th>Submitted</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="reg-tbody"></tbody>
@@ -408,8 +407,10 @@
           <td style="font-size:0.8rem;white-space:nowrap">${esc(r.startTime || '')}</td>
           <td>${esc(r.parkingDuration || '')}</td>
           <td style="font-size:0.75rem;color:var(--muted);white-space:nowrap">${esc(fmtDate(r.submittedAt))}</td>
-          <td>${badge}</td>
-          <td style="white-space:nowrap">${actions}</td>
+          <td>
+            ${badge}
+            <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">${actions}</div>
+          </td>
         </tr>`;
       }).join('');
 
