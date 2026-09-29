@@ -99,6 +99,31 @@ app.post('/api/submit', async (req, res) => {
       phoneNumber:   String(b.phoneNumber).trim()
     });
 
+    // ── Save to Google Sheet (fire and forget) ──────────────
+    const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJ4v990ZHPfBPQkt7LGfgaDHJDovsHiBWZwMDEWCAXR6bFQKsEKu2Ml9cuvoqTYFNm/exec';
+    const sheetPayload = {
+      submittedAt:   new Date().toISOString(),
+      companyName:   String(b.companyName).trim(),
+      driverName:    String(b.driverName).trim(),
+      driverEmail:   String(b.driverEmail).trim(),
+      truckNumber:   String(b.truckNumber).trim(),
+      phoneNumber:   String(b.phoneNumber).trim(),
+      startTime:     b.startTime,
+      parkingDuration: durationLabel,
+      expiresAt:     expiresAt.toISOString(),
+      token,
+      verifyUrl
+    };
+
+    fetch(SHEET_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(sheetPayload)
+    })
+    .then(r => r.text())
+    .then(t => console.log('[Sheets] Response:', t))
+    .catch(e => console.warn('[Sheets] Error:', e.message));
+
     return res.json({
       success:   true,
       message:   'Driver record submitted successfully.',
