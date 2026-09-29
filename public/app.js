@@ -174,14 +174,15 @@
 
   // ── Validation ─────────────────────────────────────────────
   const validators = {
-    companyName:      { test: v => v.trim().length >= 2, msg: 'Company name must be at least 2 characters.' },
-    driverName:       { test: v => v.trim().length >= 2, msg: 'Driver name must be at least 2 characters.' },
-    truckNumber:      { test: v => /^[A-Za-z0-9\-]+$/.test(v.trim()), msg: 'Truck number may only contain letters, numbers, and hyphens.' },
-    phoneNumber:      { test: v => /^[\d\s\(\)\+\-\.]{7,20}$/.test(v.trim()), msg: 'Enter a valid phone number.' },
-    startTime:        { test: v => v.trim() !== '', msg: 'Please select a start date and time.' },
-    numberOfDays:     { test: v => Number(v) >= 1 && Number(v) <= 365, msg: 'Number of days must be between 1 and 365.' },
-    scanLicense:      { test: () => licenseCaptured, msg: 'Please capture a photo of your license.' },
-    signatureData:    { test: () => !sigEmpty, msg: 'Please provide your signature.' }
+    companyName:   { test: v => v.trim().length >= 2, msg: 'Company name must be at least 2 characters.' },
+    driverName:    { test: v => v.trim().length >= 2, msg: 'Driver name must be at least 2 characters.' },
+    truckNumber:   { test: v => /^[A-Za-z0-9\-]+$/.test(v.trim()), msg: 'Truck number may only contain letters, numbers, and hyphens.' },
+    phoneNumber:   { test: v => /^[\d\s\(\)\+\-\.]{7,20}$/.test(v.trim()), msg: 'Enter a valid phone number.' },
+    driverEmail:   { test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: 'Enter a valid email address.' },
+    startTime:     { test: v => v.trim() !== '', msg: 'Please select a start date and time.' },
+    numberOfDays:  { test: v => Number(v) >= 1 && Number(v) <= 365, msg: 'Number of days must be between 1 and 365.' },
+    scanLicense:   { test: () => licenseCaptured, msg: 'Please capture a photo of your license.' },
+    signatureData: { test: () => !sigEmpty, msg: 'Please provide your signature.' }
   };
 
   function showFieldError(fieldId, msg) {
@@ -214,7 +215,7 @@
   }
 
   // Live blur validation for text inputs
-  ['companyName', 'driverName', 'truckNumber', 'phoneNumber', 'startTime', 'numberOfDays']
+  ['companyName', 'driverName', 'truckNumber', 'phoneNumber', 'driverEmail', 'startTime', 'numberOfDays']
     .forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -261,12 +262,13 @@
         companyName:      document.getElementById('companyName').value,
         driverName:       document.getElementById('driverName').value,
         truckNumber:      document.getElementById('truckNumber').value,
+        phoneNumber:      document.getElementById('phoneNumber').value,
+        driverEmail:      document.getElementById('driverEmail').value,
         startTime:        document.getElementById('startTime').value,
         numberOfDays:     document.getElementById('numberOfDays').value,
-        phoneNumber:      document.getElementById('phoneNumber').value,
         licenseImageData: licenseImageData.value,
         signatureData:    sigInput.value,
-        tzOffset:         new Date().getTimezoneOffset()  // minutes behind UTC (e.g. -180 for UTC+3)
+        tzOffset:         new Date().getTimezoneOffset()
       };
 
       const response = await fetch('/api/submit', {

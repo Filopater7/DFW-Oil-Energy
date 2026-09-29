@@ -38,6 +38,10 @@ app.post('/api/submit', async (req, res) => {
       return res.status(422).json({ success: false, message: 'Driver name must be at least 2 characters.' });
     if (!b.truckNumber  || !/^[A-Za-z0-9\-]+$/.test(String(b.truckNumber).trim()))
       return res.status(422).json({ success: false, message: 'Truck number: letters, numbers, hyphens only.' });
+    if (!b.phoneNumber  || !/^[\d\s\(\)\+\-\.]{7,20}$/.test(String(b.phoneNumber).trim()))
+      return res.status(422).json({ success: false, message: 'A valid phone number is required.' });
+    if (!b.driverEmail  || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(b.driverEmail).trim()))
+      return res.status(422).json({ success: false, message: 'A valid email address is required.' });
     if (!b.startTime    || isNaN(Date.parse(b.startTime)))
       return res.status(422).json({ success: false, message: 'A valid start date and time is required.' });
     const days = Number(b.numberOfDays);
@@ -74,11 +78,12 @@ app.post('/api/submit', async (req, res) => {
     store.set(token, {
       token,
       expiresAt:    expiresAt.toISOString(),
-      startTimeUTC: startUTC.toISOString(),   // UTC start for server-side comparison
+      startTimeUTC: startUTC.toISOString(),
       submittedAt:  new Date().toISOString(),
       companyName:  String(b.companyName).trim(),
       driverName:   String(b.driverName).trim(),
       truckNumber:  String(b.truckNumber).trim(),
+      driverEmail:  String(b.driverEmail).trim(),
       startTime:    b.startTime,
       numberOfDays: days,
       phoneNumber:  String(b.phoneNumber).trim()
@@ -94,6 +99,7 @@ app.post('/api/submit', async (req, res) => {
         companyName:  String(b.companyName).trim(),
         driverName:   String(b.driverName).trim(),
         truckNumber:  String(b.truckNumber).trim(),
+        driverEmail:  String(b.driverEmail).trim(),
         startTime:    b.startTime,
         numberOfDays: days,
         phoneNumber:  String(b.phoneNumber).trim()
@@ -127,6 +133,7 @@ app.get('/api/verify/:token', (req, res) => {
       driverName:   rec.driverName,
       companyName:  rec.companyName,
       truckNumber:  rec.truckNumber,
+      driverEmail:  rec.driverEmail,
       startTime:    rec.startTime,
       numberOfDays: rec.numberOfDays,
       phoneNumber:  rec.phoneNumber

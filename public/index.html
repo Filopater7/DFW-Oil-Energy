@@ -73,19 +73,31 @@
           </div>
         </div>
 
-        <!-- Row 3: Start Time & Number of Days -->
+        <!-- Row 3: Email & Start Time -->
         <div class="form-row">
+          <div class="form-group">
+            <label for="driverEmail">Driver Email <span class="req">*</span></label>
+            <input type="email" id="driverEmail" name="driverEmail"
+                   placeholder="e.g. driver@example.com"
+                   autocomplete="email" required />
+            <span class="field-error" id="err-driverEmail"></span>
+          </div>
           <div class="form-group">
             <label for="startTime">Start Time <span class="req">*</span></label>
             <input type="datetime-local" id="startTime" name="startTime" required />
             <span class="field-error" id="err-startTime"></span>
           </div>
+        </div>
+
+        <!-- Row 4: Number of Days (full width) -->
+        <div class="form-row">
           <div class="form-group">
             <label for="numberOfDays">Number of Days <span class="req">*</span></label>
             <input type="number" id="numberOfDays" name="numberOfDays"
                    min="1" max="365" placeholder="e.g. 3" required />
             <span class="field-error" id="err-numberOfDays"></span>
           </div>
+          <div class="form-group"><!-- spacer --></div>
         </div>
 
         <!-- Scan License – Camera Capture -->
