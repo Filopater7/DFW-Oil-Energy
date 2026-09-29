@@ -243,10 +243,8 @@
                 <th>Company</th>
                 <th>Truck #</th>
                 <th>Phone</th>
-                <th>Email</th>
                 <th>Start Time</th>
                 <th>Duration</th>
-                <th>Expires At</th>
                 <th>Submitted</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -392,22 +390,23 @@
           : '<span class="badge badge-pending">⏳ Pending</span>';
 
         const actions = status === 'pending'
-          ? `<button class="btn-approve" data-token="${esc(r.token)}">Approve</button>
-             <button class="btn-reject"  data-token="${esc(r.token)}">Reject</button>`
+          ? `<button class="btn-approve" data-token="${esc(r.token)}">✓ Approve</button>
+             <button class="btn-reject"  data-token="${esc(r.token)}">✗ Reject</button>`
           : status === 'approved'
           ? `<button class="btn-reject" data-token="${esc(r.token)}">Revoke</button>`
           : '—';
 
         return `<tr>
           <td style="color:var(--muted)">${i + 1}</td>
-          <td><strong>${esc(r.driverName || '')}</strong></td>
+          <td>
+            <strong>${esc(r.driverName || '')}</strong>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${esc(r.driverEmail || '')}</div>
+          </td>
           <td>${esc(r.companyName || '')}</td>
           <td style="font-family:monospace">${esc(r.truckNumber || '')}</td>
           <td>${esc(r.phoneNumber || '')}</td>
-          <td style="font-size:0.8rem">${esc(r.driverEmail || '')}</td>
           <td style="font-size:0.8rem;white-space:nowrap">${esc(r.startTime || '')}</td>
           <td>${esc(r.parkingDuration || '')}</td>
-          <td style="font-size:0.8rem;white-space:nowrap">${esc(r.expiresAt || '')}</td>
           <td style="font-size:0.75rem;color:var(--muted);white-space:nowrap">${esc(fmtDate(r.submittedAt))}</td>
           <td>${badge}</td>
           <td style="white-space:nowrap">${actions}</td>
