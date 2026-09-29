@@ -271,6 +271,23 @@
     let adminPwd     = '';
     let allRegs      = [];
     let activeFilter = 'all';
+    const CACHE_KEY  = 'dfw_admin_cache';
+
+    // Load from cache instantly before any network call
+    function loadCache() {
+      try {
+        const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        if (c && c.registrations) {
+          allRegs = c.registrations.slice().reverse();
+          renderTable();
+          applyAnalytics(c.analytics || {});
+        }
+      } catch {}
+    }
+
+    function saveCache(data) {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+    }
 
     const loginSection    = document.getElementById('login-section');
     const dashboardSection= document.getElementById('dashboard-section');
@@ -314,6 +331,7 @@
 
     document.getElementById('logout-btn').addEventListener('click', () => {
       sessionStorage.removeItem('dfw_admin_pwd');
+      localStorage.removeItem(CACHE_KEY);
       adminPwd = '';
       dashboardSection.hidden = true;
       loginSection.hidden = false;
@@ -323,45 +341,46 @@
     function showDashboard() {
       loginSection.hidden     = true;
       dashboardSection.hidden = false;
-      loadAll();
+      loadCache();   // show cached data instantly
+      loadAll();     // then fetch fresh data in background
     }
 
     // ── REFRESH ────────────────────────────────────────────────
     document.getElementById('refresh-btn').addEventListener('click', loadAll);
 
     async function loadAll() {
-      // Load both in parallel — faster than sequential
-      await Promise.all([loadAnalytics(), loadRegistrations()]);
+      // Single request for both analytics + registrations
+      try {
+        const res  = await fetch('/api/admin/all', { headers: { 'x-admin-password': adminPwd } });
+        const data = await res.json();
+        if (data.registrations) {
+          allRegs = data.registrations.slice().reverse();
+          saveCache(data);
+          renderTable();
+          applyAnalytics(data.analytics || {});
+        }
+      } catch (e) {
+        console.error('loadAll error:', e.message);
+      }
     }
 
-    // ── ANALYTICS ─────────────────────────────────────────────
-    async function loadAnalytics() {
-      try {
-        const res  = await fetch('/api/admin/analytics', { headers: { 'x-admin-password': adminPwd } });
-        const data = await res.json();
-        document.getElementById('stat-today').textContent = data.today  ?? '—';
-        document.getElementById('stat-week').textContent  = data.thisWeek ?? '—';
-        document.getElementById('stat-month').textContent = data.thisMonth ?? '—';
-        document.getElementById('stat-total').textContent = data.total  ?? '—';
-      } catch {
-        ['today','week','month','total'].forEach(k =>
-          document.getElementById(`stat-${k}`).textContent = '—'
-        );
-      }
+    function applyAnalytics(a) {
+      document.getElementById('stat-today').textContent  = a.today    ?? '—';
+      document.getElementById('stat-week').textContent   = a.thisWeek ?? '—';
+      document.getElementById('stat-month').textContent  = a.thisMonth ?? '—';
+      document.getElementById('stat-total').textContent  = a.total    ?? '—';
     }
 
     // ── REGISTRATIONS ──────────────────────────────────────────
     async function loadRegistrations() {
-      document.getElementById('table-loading').hidden = false;
-      document.getElementById('reg-table').hidden = true;
-      document.getElementById('empty-msg').hidden = true;
+      // kept for approve/reject refresh
       try {
         const res  = await fetch('/api/admin/registrations', { headers: { 'x-admin-password': adminPwd } });
         const data = await res.json();
-        allRegs = (data.registrations || []).reverse(); // newest first
+        allRegs = (data.registrations || []).reverse();
         renderTable();
       } catch (e) {
-        document.getElementById('table-loading').textContent = 'Failed to load. ' + e.message;
+        console.error('loadRegistrations:', e.message);
       }
     }
 
@@ -441,7 +460,7 @@
           toast('✓ Approved! Driver will see QR within 5 seconds.');
           if (rec) rec.approvalStatus = 'approved';
           renderTable();
-          loadAnalytics();
+          loadAll(); // refresh analytics count too
         } else {
           toast('Error: ' + (data.message || 'Could not approve.'));
           if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
@@ -466,7 +485,7 @@
           const rec = allRegs.find(r => r.token === token);
           if (rec) rec.approvalStatus = 'rejected';
           renderTable();
-          loadAnalytics();
+          loadAll();
         }
       } catch (e) { toast('Error: ' + e.message); }
     }

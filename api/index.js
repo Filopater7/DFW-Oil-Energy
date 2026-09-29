@@ -251,6 +251,23 @@ app.get('/api/confirm/:token', async (req, res) => {
   }
 });
 
+// ── GET /api/admin/all (combined — analytics + registrations in 1 request) ─
+app.get('/api/admin/all', adminAuth, async (req, res) => {
+  try {
+    const [regsData, analyticsData] = await Promise.all([
+      sheetGet({ action: 'list' }),
+      sheetGet({ action: 'analytics' })
+    ]);
+    const registrations = Array.isArray(regsData) ? regsData : (regsData?.registrations || []);
+    return res.json({
+      registrations,
+      analytics: analyticsData || { today: 0, thisWeek: 0, thisMonth: 0, total: 0 }
+    });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 // ── GET /api/admin/registrations ───────────────────────────
 app.get('/api/admin/registrations', adminAuth, async (req, res) => {
   try {
