@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    api/index.js  –  Vercel serverless handler
    Approval flow: registrations start as "pending",
    QR only issued after admin approves.

@@ -1,31 +1,31 @@
 /* ============================================================
-   DFW Oil Energy – Driver Tracking Portal
+   Payless Fuel Centers of Texas – Truck Parking Registration
    Brand palette:
-     Black  : #111111
-     Gold   : #C9A84C
-     Orange : #E07B20
-     Green  : #2E7D32
-     White  : #FFFFFF
+     Navy  : #1B2A4A
+     Red   : #C8102E
+     White : #FFFFFF
+     Light : #E8ECF4
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --black:   #111111;
-  --gold:    #C9A84C;
-  --gold-lt: #E4C77A;
-  --orange:  #E07B20;
-  --green:   #2E7D32;
+  --black:   #0D1526;
+  --gold:    #C8102E;
+  --gold-lt: #E8395A;
+  --orange:  #C8102E;
+  --green:   #1B6B3A;
   --white:   #FFFFFF;
-  --bg:      #1a1a1a;
-  --card-bg: #222222;
-  --border:  #3a3a3a;
-  --text:    #EEEEEE;
-  --muted:   #999999;
+  --bg:      #0f1825;
+  --card-bg: #1a2540;
+  --border:  #2a3a5c;
+  --text:    #EEF0F5;
+  --muted:   #7B8BAD;
   --error:   #E53935;
-  --success: #43A047;
+  --success: #2E7D32;
+  --navy:    #1B2A4A;
   --radius:  10px;
-  --shadow:  0 8px 32px rgba(0,0,0,0.55);
+  --shadow:  0 8px 32px rgba(0,0,0,0.6);
 }
 
 html { scroll-behavior: smooth; }
@@ -41,8 +41,8 @@ body {
 
 /* ── HEADER ─────────────────────────────────────────────── */
 .site-header {
-  background: linear-gradient(135deg, #0d0d0d 0%, #1c1c1c 60%, #111 100%);
-  border-bottom: 3px solid var(--gold);
+  background: linear-gradient(135deg, #0D1526 0%, #1B2A4A 60%, #0D1526 100%);
+  border-bottom: 3px solid #C8102E;
   padding: 18px 32px;
 }
 
@@ -57,17 +57,17 @@ body {
 .logo {
   width: 90px;
   height: 90px;
-  border-radius: 50%;
-  border: 3px solid var(--gold);
+  border-radius: 8px;
+  border: 2px solid #C8102E;
   object-fit: cover;
   flex-shrink: 0;
-  box-shadow: 0 0 16px rgba(201,168,76,0.4);
+  box-shadow: 0 0 16px rgba(200,16,46,0.4);
 }
 
 .header-text h1 {
   font-size: 2rem;
-  font-weight: 700;
-  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-lt) 60%, var(--orange) 100%);
+  font-weight: 800;
+  background: linear-gradient(90deg, #FFFFFF 0%, #E8ECF4 60%, #C8102E 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -94,7 +94,7 @@ body {
 .form-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-top: 4px solid var(--gold);
+  border-top: 4px solid #C8102E;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 40px 40px 48px;
@@ -507,10 +507,10 @@ input.invalid { border-color: var(--error) !important; }
 .btn-submit {
   width: 100%;
   padding: 15px 24px;
-  background: linear-gradient(90deg, var(--gold) 0%, var(--orange) 100%);
+  background: linear-gradient(90deg, #C8102E 0%, #1B2A4A 100%);
   border: none;
   border-radius: var(--radius);
-  color: var(--black);
+  color: var(--white);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -547,7 +547,7 @@ input.invalid { border-color: var(--error) !important; }
 
 /* ── FOOTER ─────────────────────────────────────────────── */
 .site-footer {
-  background: #0d0d0d;
+  background: #0D1526;
   border-top: 1px solid var(--border);
   text-align: center;
   padding: 16px;
