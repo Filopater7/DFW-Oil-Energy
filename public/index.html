@@ -89,15 +89,32 @@
           </div>
         </div>
 
-        <!-- Row 4: Number of Days (full width) -->
-        <div class="form-row">
-          <div class="form-group">
-            <label for="numberOfDays">Number of Days <span class="req">*</span></label>
-            <input type="number" id="numberOfDays" name="numberOfDays"
-                   min="1" max="365" placeholder="e.g. 3" required />
-            <span class="field-error" id="err-numberOfDays"></span>
+        <!-- Row 4: Trip Duration (Days / Hours / Minutes) -->
+        <div class="form-group full-width">
+          <label>Trip Duration <span class="req">*</span></label>
+          <div class="duration-row">
+            <div class="duration-unit">
+              <input type="number" id="durationDays" name="durationDays"
+                     min="0" max="365" placeholder="0" />
+              <span class="duration-label">Days</span>
+              <span class="field-error" id="err-durationDays"></span>
+            </div>
+            <div class="duration-sep">:</div>
+            <div class="duration-unit">
+              <input type="number" id="durationHours" name="durationHours"
+                     min="0" max="23" placeholder="0" />
+              <span class="duration-label">Hours</span>
+              <span class="field-error" id="err-durationHours"></span>
+            </div>
+            <div class="duration-sep">:</div>
+            <div class="duration-unit">
+              <input type="number" id="durationMins" name="durationMins"
+                     min="0" max="59" placeholder="0" />
+              <span class="duration-label">Minutes</span>
+              <span class="field-error" id="err-durationMins"></span>
+            </div>
           </div>
-          <div class="form-group"><!-- spacer --></div>
+          <span class="field-error" id="err-duration"></span>
         </div>
 
         <!-- Scan License – Camera Capture -->

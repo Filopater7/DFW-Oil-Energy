@@ -337,7 +337,7 @@
         ['Truck Number',  driver.truckNumber],
         ['Email',         driver.driverEmail],
         ['Start Time',    new Date(driver.startTime).toLocaleString()],
-        ['Trip Duration', `${driver.numberOfDays} day${driver.numberOfDays !== 1 ? 's' : ''}`],
+        ['Trip Duration', driver.durationLabel || `${driver.durationDays || 0}d ${driver.durationHours || 0}h ${driver.durationMins || 0}m`],
         ['Phone',         driver.phoneNumber]
       ];
       table.innerHTML = rows.map(([label, value]) =>

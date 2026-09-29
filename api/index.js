@@ -44,9 +44,12 @@ app.post('/api/submit', async (req, res) => {
       return res.status(422).json({ success: false, message: 'A valid email address is required.' });
     if (!b.startTime    || isNaN(Date.parse(b.startTime)))
       return res.status(422).json({ success: false, message: 'A valid start date and time is required.' });
-    const days = Number(b.numberOfDays);
-    if (isNaN(days) || days < 1 || days > 365)
-      return res.status(422).json({ success: false, message: 'Number of days must be between 1 and 365.' });
+    const days  = Number(b.durationDays)  || 0;
+    const hours = Number(b.durationHours) || 0;
+    const mins  = Number(b.durationMins)  || 0;
+    const totalMins = days * 1440 + hours * 60 + mins;
+    if (totalMins < 1)
+      return res.status(422).json({ success: false, message: 'Trip duration must be at least 1 minute.' });
     if (!b.phoneNumber  || !/^[\d\s\(\)\+\-\.]{7,20}$/.test(String(b.phoneNumber).trim()))
       return res.status(422).json({ success: false, message: 'A valid phone number is required.' });
     if (!b.licenseImageData || !String(b.licenseImageData).startsWith('data:image/'))
@@ -55,11 +58,15 @@ app.post('/api/submit', async (req, res) => {
       return res.status(422).json({ success: false, message: 'A driver signature is required.' });
 
     // Generate token and expiry
-    const token     = uuidv4();
-    // Convert local startTime to UTC using browser's timezone offset
-    const tzOffset  = Number(b.tzOffset) || 0;  // minutes behind UTC
-    const startUTC  = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
-    const expiresAt = new Date(startUTC.getTime() + days * 86400000);
+    const token      = uuidv4();
+    const tzOffset   = Number(b.tzOffset) || 0;
+    const startUTC   = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
+    const expiresAt  = new Date(startUTC.getTime() + totalMins * 60000);
+    const durationLabel = [
+      days  > 0 ? `${days}d`  : '',
+      hours > 0 ? `${hours}h` : '',
+      mins  > 0 ? `${mins}m`  : ''
+    ].filter(Boolean).join(' ') || '0m';
 
     // Build verify URL
     const proto     = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
@@ -77,16 +84,19 @@ app.post('/api/submit', async (req, res) => {
     // Save to memory
     store.set(token, {
       token,
-      expiresAt:    expiresAt.toISOString(),
-      startTimeUTC: startUTC.toISOString(),
-      submittedAt:  new Date().toISOString(),
-      companyName:  String(b.companyName).trim(),
-      driverName:   String(b.driverName).trim(),
-      truckNumber:  String(b.truckNumber).trim(),
-      driverEmail:  String(b.driverEmail).trim(),
-      startTime:    b.startTime,
-      numberOfDays: days,
-      phoneNumber:  String(b.phoneNumber).trim()
+      expiresAt:     expiresAt.toISOString(),
+      startTimeUTC:  startUTC.toISOString(),
+      submittedAt:   new Date().toISOString(),
+      companyName:   String(b.companyName).trim(),
+      driverName:    String(b.driverName).trim(),
+      truckNumber:   String(b.truckNumber).trim(),
+      driverEmail:   String(b.driverEmail).trim(),
+      startTime:     b.startTime,
+      durationDays:  days,
+      durationHours: hours,
+      durationMins:  mins,
+      durationLabel,
+      phoneNumber:   String(b.phoneNumber).trim()
     });
 
     return res.json({
@@ -96,13 +106,16 @@ app.post('/api/submit', async (req, res) => {
       expiresAt: expiresAt.toISOString(),
       qrDataURL,
       driver: {
-        companyName:  String(b.companyName).trim(),
-        driverName:   String(b.driverName).trim(),
-        truckNumber:  String(b.truckNumber).trim(),
-        driverEmail:  String(b.driverEmail).trim(),
-        startTime:    b.startTime,
-        numberOfDays: days,
-        phoneNumber:  String(b.phoneNumber).trim()
+        companyName:   String(b.companyName).trim(),
+        driverName:    String(b.driverName).trim(),
+        truckNumber:   String(b.truckNumber).trim(),
+        driverEmail:   String(b.driverEmail).trim(),
+        startTime:     b.startTime,
+        durationDays:  days,
+        durationHours: hours,
+        durationMins:  mins,
+        durationLabel,
+        phoneNumber:   String(b.phoneNumber).trim()
       }
     });
 
@@ -130,13 +143,16 @@ app.get('/api/verify/:token', (req, res) => {
       token:        rec.token,
       expiresAt:    rec.expiresAt,
       submittedAt:  rec.submittedAt,
-      driverName:   rec.driverName,
-      companyName:  rec.companyName,
-      truckNumber:  rec.truckNumber,
-      driverEmail:  rec.driverEmail,
-      startTime:    rec.startTime,
-      numberOfDays: rec.numberOfDays,
-      phoneNumber:  rec.phoneNumber
+      driverName:    rec.driverName,
+      companyName:   rec.companyName,
+      truckNumber:   rec.truckNumber,
+      driverEmail:   rec.driverEmail,
+      startTime:     rec.startTime,
+      durationLabel: rec.durationLabel,
+      durationDays:  rec.durationDays,
+      durationHours: rec.durationHours,
+      durationMins:  rec.durationMins,
+      phoneNumber:   rec.phoneNumber
     });
   } catch (e) {
     console.error('[/api/verify crash]', e.stack || e.message);

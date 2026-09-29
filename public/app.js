@@ -180,7 +180,15 @@
     phoneNumber:   { test: v => /^[\d\s\(\)\+\-\.]{7,20}$/.test(v.trim()), msg: 'Enter a valid phone number.' },
     driverEmail:   { test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: 'Enter a valid email address.' },
     startTime:     { test: v => v.trim() !== '', msg: 'Please select a start date and time.' },
-    numberOfDays:  { test: v => Number(v) >= 1 && Number(v) <= 365, msg: 'Number of days must be between 1 and 365.' },
+    duration:      {
+      test: () => {
+        const d = Number(document.getElementById('durationDays').value)  || 0;
+        const h = Number(document.getElementById('durationHours').value) || 0;
+        const m = Number(document.getElementById('durationMins').value)  || 0;
+        return (d * 1440 + h * 60 + m) >= 1;
+      },
+      msg: 'Trip duration must be at least 1 minute.'
+    },
     scanLicense:   { test: () => licenseCaptured, msg: 'Please capture a photo of your license.' },
     signatureData: { test: () => !sigEmpty, msg: 'Please provide your signature.' }
   };
@@ -215,7 +223,7 @@
   }
 
   // Live blur validation for text inputs
-  ['companyName', 'driverName', 'truckNumber', 'phoneNumber', 'driverEmail', 'startTime', 'numberOfDays']
+  ['companyName', 'driverName', 'truckNumber', 'phoneNumber', 'driverEmail', 'startTime']
     .forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -265,7 +273,9 @@
         phoneNumber:      document.getElementById('phoneNumber').value,
         driverEmail:      document.getElementById('driverEmail').value,
         startTime:        document.getElementById('startTime').value,
-        numberOfDays:     document.getElementById('numberOfDays').value,
+        durationDays:     document.getElementById('durationDays').value  || '0',
+        durationHours:    document.getElementById('durationHours').value || '0',
+        durationMins:     document.getElementById('durationMins').value  || '0',
         licenseImageData: licenseImageData.value,
         signatureData:    sigInput.value,
         tzOffset:         new Date().getTimezoneOffset()

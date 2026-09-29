@@ -394,6 +394,66 @@ input.invalid { border-color: var(--error) !important; }
   color: var(--black);
 }
 
+/* ── DURATION ROW ───────────────────────────────────────── */
+.duration-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.duration-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 6px;
+}
+
+.duration-unit input[type="number"] {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 11px 14px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.duration-unit input[type="number"]::-webkit-inner-spin-button,
+.duration-unit input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.duration-unit input[type="number"]:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.18);
+}
+
+.duration-unit input[type="number"].invalid {
+  border-color: var(--error) !important;
+}
+
+.duration-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+}
+
+.duration-sep {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--gold);
+  padding-top: 8px;
+  user-select: none;
+}
+
 /* ── SIGNATURE PAD ──────────────────────────────────────── */
 .signature-container {
   border: 1px solid var(--border);
