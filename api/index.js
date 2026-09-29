@@ -9,6 +9,12 @@
 const express = require('express');
 const QRCode  = require('qrcode');
 
+// ── In-memory approval cache ───────────────────────────────
+// Stores approved QR data so confirm page gets instant response
+// without waiting for a Google Sheet round-trip
+if (!global._dfwApproved) global._dfwApproved = new Map();
+const approvedCache = global._dfwApproved;
+
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0;
@@ -53,6 +59,12 @@ function adminAuth(req, res, next) {
 
 // ── Build encoded QR data URL for an approved record ──────
 async function buildQR(rec, proto, host) {
+  // Always use UTC ISO strings for reliable Date parsing
+  const startMs  = rec.startTimeUTC  ? new Date(rec.startTimeUTC).getTime()
+                                     : new Date(rec.startTime).getTime();
+  const expiresMs = rec.expiresAtUTC ? new Date(rec.expiresAtUTC).getTime()
+                                     : new Date(rec.expiresAt).getTime();
+
   const record = {
     t:  rec.token,
     cn: rec.companyName,
@@ -60,9 +72,9 @@ async function buildQR(rec, proto, host) {
     de: rec.driverEmail,
     tn: rec.truckNumber,
     ph: rec.phoneNumber,
-    st: Math.floor(new Date(rec.startTimeUTC).getTime() / 1000),
-    ex: Math.floor(new Date(rec.expiresAt).getTime() / 1000),
-    dl: rec.parkingDuration
+    st: Math.floor(startMs   / 1000),
+    ex: Math.floor(expiresMs / 1000),
+    dl: rec.parkingDuration || rec.durationLabel || ''
   };
   const encoded   = Buffer.from(JSON.stringify(record)).toString('base64url');
   const verifyUrl = `${proto}://${host}/verify.html?d=${encoded}`;
@@ -171,11 +183,24 @@ app.post('/api/submit', async (req, res) => {
 });
 
 // ── GET /api/confirm/:token ────────────────────────────────
-// Driver polls this after submission to check approval status.
-// Returns QR code only if approved.
 app.get('/api/confirm/:token', async (req, res) => {
   try {
     const { token } = req.params;
+
+    // ── Check in-memory cache first (instant, no Sheet call) ──
+    const cached = approvedCache.get(token);
+    if (cached && cached.qrDataURL) {
+      return res.json({
+        found:          true,
+        approvalStatus: 'approved',
+        token,
+        expiresAt:      cached.expiresAt,
+        qrDataURL:      cached.qrDataURL,
+        driver:         cached.driver
+      });
+    }
+
+    // ── Fall back to Sheet lookup ──────────────────────────
     const data = await sheetGet({ action: 'getByToken', token });
 
     if (!data || !data.token)
@@ -264,7 +289,6 @@ app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
     ]);
 
     if (!approveResult || approveResult.success === false) {
-      // Try fetching record to build QR as fallback
       if (!qrDataURL) {
         const rec = await sheetGet({ action: 'getByToken', token });
         if (rec && rec.token) {
@@ -273,6 +297,16 @@ app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
           verifyUrl  = built.verifyUrl;
         }
       }
+    }
+
+    // ── Cache so confirm page gets instant response ────────
+    if (qrDataURL) {
+      approvedCache.set(token, {
+        qrDataURL,
+        verifyUrl,
+        expiresAt: body.record ? (body.record.expiresAtUTC || body.record.expiresAt) : null,
+        driver:    body.record || {}
+      });
     }
 
     return res.json({ success: true, qrDataURL, verifyUrl, token });

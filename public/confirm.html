@@ -316,7 +316,7 @@
 
     function startPolling(token) {
       poll(token); // immediate first check
-      pollInterval = setInterval(() => poll(token), 10000); // every 10s
+      pollInterval = setInterval(() => poll(token), 5000); // every 5s
     }
 
     async function poll(token) {
