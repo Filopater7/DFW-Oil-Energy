@@ -309,7 +309,7 @@
       loginBtn.disabled = true;
       loginBtn.textContent = 'Checking…';
       try {
-        const res = await fetch('/api/admin/analytics', {
+        const res = await fetch('/api/admin/ping', {
           headers: { 'x-admin-password': pwd }
         });
         if (res.ok) {

@@ -1,19 +1,27 @@
 ﻿/* ============================================================
    api/index.js  –  Vercel serverless handler
-   Approval flow: registrations start as "pending",
-   QR only issued after admin approves.
+   Approval flow: pending → admin approves → QR issued.
    Persistence: Google Apps Script Web App (Sheets).
+
+   PERFORMANCE OPTIMISATIONS:
+   - /api/submit: fire-and-forget Sheet save (no blocking)
+   - /api/confirm: server-side TTL cache (4s) for pending polls
+   - /api/admin/all: single Sheet call returns list+analytics
+   - login ping: no Sheet call (env-var only)
+   - approve: setVerifyUrl removed (saves one Sheet round-trip)
    ============================================================ */
 'use strict';
 
 const express = require('express');
 const QRCode  = require('qrcode');
 
-// ── In-memory approval cache ───────────────────────────────
-// Stores approved QR data so confirm page gets instant response
-// without waiting for a Google Sheet round-trip
-if (!global._dfwApproved) global._dfwApproved = new Map();
+// ── In-memory caches ───────────────────────────────────────
+if (!global._dfwApproved)     global._dfwApproved     = new Map(); // token → {qrDataURL,…}
+if (!global._dfwPendingCache) global._dfwPendingCache = new Map(); // token → {data, ts}
+
 const approvedCache = global._dfwApproved;
+const pendingCache  = global._dfwPendingCache;
+const PENDING_TTL   = 8000; // ms — reuse a pending lookup for 8 seconds
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -25,14 +33,14 @@ function uuidv4() {
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
-// ── Google Sheet helper ────────────────────────────────────
+// ── Google Sheet helpers ───────────────────────────────────
 async function sheet(payload) {
   const url = process.env.GOOGLE_SHEET_URL;
   if (!url) { console.warn('[Sheets] GOOGLE_SHEET_URL not set'); return null; }
-  const res  = await fetch(url, {
-    method: 'POST',
+  const res = await fetch(url, {
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body:    JSON.stringify(payload),
     redirect: 'follow'
   });
   const txt = await res.text();
@@ -57,14 +65,12 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// ── Build encoded QR data URL for an approved record ──────
+// ── Build QR from a record ─────────────────────────────────
 async function buildQR(rec, proto, host) {
-  // Always use UTC ISO strings for reliable Date parsing
-  const startMs  = rec.startTimeUTC  ? new Date(rec.startTimeUTC).getTime()
-                                     : new Date(rec.startTime).getTime();
-  const expiresMs = rec.expiresAtUTC ? new Date(rec.expiresAtUTC).getTime()
-                                     : new Date(rec.expiresAt).getTime();
-
+  const startMs   = rec.startTimeUTC  ? new Date(rec.startTimeUTC).getTime()
+                                      : new Date(rec.startTime).getTime();
+  const expiresMs = rec.expiresAtUTC  ? new Date(rec.expiresAtUTC).getTime()
+                                      : new Date(rec.expiresAt).getTime();
   const record = {
     t:  rec.token,
     cn: rec.companyName,
@@ -82,12 +88,17 @@ async function buildQR(rec, proto, host) {
     errorCorrectionLevel: 'M', margin: 2, width: 300,
     color: { dark: '#111111', light: '#FFFFFF' }
   });
-  return { qrDataURL, verifyUrl, encoded };
+  return { qrDataURL, verifyUrl };
 }
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) =>
   res.json({ status: 'ok', time: new Date().toISOString() })
+);
+
+// ── Admin ping (password check only — NO Sheet call) ───────
+app.get('/api/admin/ping', adminAuth, (_req, res) =>
+  res.json({ ok: true })
 );
 
 // ── POST /api/submit ───────────────────────────────────────
@@ -119,7 +130,6 @@ app.post('/api/submit', async (req, res) => {
     if (!b.signatureData    || !String(b.signatureData).startsWith('data:image/'))
       return res.status(422).json({ success: false, message: 'A driver signature is required.' });
 
-    // Generate token + expiry
     const token    = uuidv4();
     const tzOffset = Number(b.tzOffset) || 0;
     const startUTC = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
@@ -130,33 +140,27 @@ app.post('/api/submit', async (req, res) => {
       mins  > 0 ? `${mins}m`  : ''
     ].filter(Boolean).join(' ') || '0m';
 
-    const submittedAt = new Date().toISOString();
     const startTimeCST = new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' });
     const expiresAtCST = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 
-    // Save to Google Sheet as PENDING (no QR yet)
-    try {
-      await sheet({
-        action:          'save',
-        token,
-        submittedAt,
-        companyName:     String(b.companyName).trim(),
-        driverName:      String(b.driverName).trim(),
-        driverEmail:     String(b.driverEmail).trim(),
-        truckNumber:     String(b.truckNumber).trim(),
-        phoneNumber:     String(b.phoneNumber).trim(),
-        startTime:       startTimeCST,
-        startTimeUTC:    startUTC.toISOString(),
-        parkingDuration: durationLabel,
-        expiresAt:       expiresAtCST,
-        expiresAtUTC:    expiresAt.toISOString(),
-        approvalStatus:  'pending'
-      });
-    } catch (sheetErr) {
-      console.warn('[Sheets] Error:', sheetErr.message);
-    }
+    // ── Fire-and-forget Sheet save — do NOT block the response ──
+    sheet({
+      action: 'save', token,
+      submittedAt:     new Date().toISOString(),
+      companyName:     String(b.companyName).trim(),
+      driverName:      String(b.driverName).trim(),
+      driverEmail:     String(b.driverEmail).trim(),
+      truckNumber:     String(b.truckNumber).trim(),
+      phoneNumber:     String(b.phoneNumber).trim(),
+      startTime:       startTimeCST,
+      startTimeUTC:    startUTC.toISOString(),
+      parkingDuration: durationLabel,
+      expiresAt:       expiresAtCST,
+      expiresAtUTC:    expiresAt.toISOString(),
+      approvalStatus:  'pending'
+    }).catch(e => console.warn('[submit] Sheet save error:', e.message));
 
-    // Return pending — NO QR code yet
+    // Respond immediately — driver doesn't wait for Sheet
     return res.json({
       success:        true,
       approvalStatus: 'pending',
@@ -183,65 +187,80 @@ app.post('/api/submit', async (req, res) => {
 });
 
 // ── GET /api/confirm/:token ────────────────────────────────
+// Polled every 5s by the driver's confirm.html while pending.
+// Uses a 8s server-side TTL cache for pending results so repeated
+// polls don't all hit Google Sheets.
 app.get('/api/confirm/:token', async (req, res) => {
   try {
     const { token } = req.params;
 
-    // ── Check in-memory cache first (instant, no Sheet call) ──
+    // Tier 1: approved cache (instant, no Sheet call)
     const cached = approvedCache.get(token);
     if (cached && cached.qrDataURL) {
       return res.json({
-        found:          true,
-        approvalStatus: 'approved',
-        token,
-        expiresAt:      cached.expiresAt,
-        qrDataURL:      cached.qrDataURL,
-        driver:         cached.driver
+        found: true, approvalStatus: 'approved',
+        token, expiresAt: cached.expiresAt,
+        qrDataURL: cached.qrDataURL, driver: cached.driver
       });
     }
 
-    // ── Fall back to Sheet lookup ──────────────────────────
+    // Tier 2: pending TTL cache — reuse recent Sheet lookup
+    const cp = pendingCache.get(token);
+    if (cp && (Date.now() - cp.ts) < PENDING_TTL) {
+      const d = cp.data;
+      if (d.approvalStatus !== 'approved') {
+        return res.json({
+          found: true, approvalStatus: d.approvalStatus || 'pending',
+          token: d.token,
+          driver: {
+            companyName: d.companyName, driverName: d.driverName,
+            truckNumber: d.truckNumber, driverEmail: d.driverEmail,
+            startTime: d.startTime, durationLabel: d.parkingDuration,
+            phoneNumber: d.phoneNumber
+          }
+        });
+      }
+    }
+
+    // Tier 3: fresh Sheet lookup
     const data = await sheetGet({ action: 'getByToken', token });
 
     if (!data || !data.token)
       return res.status(404).json({ found: false, message: 'Registration not found.' });
 
     if (data.approvalStatus !== 'approved') {
+      // Cache this pending result for PENDING_TTL ms
+      pendingCache.set(token, { data, ts: Date.now() });
       return res.json({
-        found:          true,
-        approvalStatus: data.approvalStatus || 'pending',
-        token:          data.token,
+        found: true, approvalStatus: data.approvalStatus || 'pending',
+        token: data.token,
         driver: {
-          companyName:   data.companyName,
-          driverName:    data.driverName,
-          truckNumber:   data.truckNumber,
-          driverEmail:   data.driverEmail,
-          startTime:     data.startTime,
-          durationLabel: data.parkingDuration,
-          phoneNumber:   data.phoneNumber
+          companyName: data.companyName, driverName: data.driverName,
+          truckNumber: data.truckNumber, driverEmail: data.driverEmail,
+          startTime: data.startTime, durationLabel: data.parkingDuration,
+          phoneNumber: data.phoneNumber
         }
       });
     }
 
-    // Approved — generate and return QR code
+    // Approved — build and cache QR
+    pendingCache.delete(token);
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host  = req.headers.host;
     const { qrDataURL } = await buildQR(data, proto, host);
+    approvedCache.set(token, {
+      qrDataURL, expiresAt: data.expiresAtUTC || data.expiresAt, driver: data
+    });
 
     return res.json({
-      found:          true,
-      approvalStatus: 'approved',
-      token:          data.token,
-      expiresAt:      data.expiresAtUTC || data.expiresAt,
+      found: true, approvalStatus: 'approved',
+      token: data.token, expiresAt: data.expiresAtUTC || data.expiresAt,
       qrDataURL,
       driver: {
-        companyName:   data.companyName,
-        driverName:    data.driverName,
-        truckNumber:   data.truckNumber,
-        driverEmail:   data.driverEmail,
-        startTime:     data.startTime,
-        durationLabel: data.parkingDuration,
-        phoneNumber:   data.phoneNumber
+        companyName: data.companyName, driverName: data.driverName,
+        truckNumber: data.truckNumber, driverEmail: data.driverEmail,
+        startTime: data.startTime, durationLabel: data.parkingDuration,
+        phoneNumber: data.phoneNumber
       }
     });
 
@@ -251,14 +270,23 @@ app.get('/api/confirm/:token', async (req, res) => {
   }
 });
 
-// ── GET /api/admin/all (combined — analytics + registrations in 1 request) ─
+// ── GET /api/admin/all ─────────────────────────────────────
+// ONE Sheet call that returns list + analytics together.
+// The Apps Script computes analytics from the same data it returns,
+// avoiding a second full-sheet read.
 app.get('/api/admin/all', adminAuth, async (req, res) => {
   try {
+    // Single call — Apps Script returns { registrations, analytics }
+    const data = await sheetGet({ action: 'listWithAnalytics' });
+    if (data && data.registrations) {
+      return res.json(data);
+    }
+    // Fallback: two parallel calls if Apps Script is old version
     const [regsData, analyticsData] = await Promise.all([
       sheetGet({ action: 'list' }),
       sheetGet({ action: 'analytics' })
     ]);
-    const registrations = Array.isArray(regsData) ? regsData : (regsData?.registrations || []);
+    const registrations = Array.isArray(regsData) ? regsData : [];
     return res.json({
       registrations,
       analytics: analyticsData || { today: 0, thisWeek: 0, thisMonth: 0, total: 0 }
@@ -273,9 +301,18 @@ app.get('/api/admin/registrations', adminAuth, async (req, res) => {
   try {
     const data = await sheetGet({ action: 'list' });
     if (!data) return res.json({ registrations: [] });
-    return res.json({ registrations: Array.isArray(data) ? data : (data.registrations || []) });
+    return res.json({ registrations: Array.isArray(data) ? data : [] });
   } catch (e) {
-    console.error('[/api/admin/registrations]', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /api/admin/analytics ───────────────────────────────
+app.get('/api/admin/analytics', adminAuth, async (req, res) => {
+  try {
+    const data = await sheetGet({ action: 'analytics' });
+    return res.json(data || { today: 0, thisWeek: 0, thisMonth: 0, total: 0 });
+  } catch (e) {
     return res.status(500).json({ error: e.message });
   }
 });
@@ -290,54 +327,40 @@ app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
 
     let qrDataURL = null, verifyUrl = null;
 
-    // Step 1: Build QR from record data sent by admin (fast, no Sheet call)
-    if (body.record && Object.keys(body.record).length > 0) {
+    // Build QR from record sent by admin page (no Sheet call needed)
+    if (body.record && body.record.token) {
       try {
         const built = await buildQR(body.record, proto, host);
         qrDataURL   = built.qrDataURL;
         verifyUrl   = built.verifyUrl;
-        console.log('[approve] QR built from admin record, verifyUrl length:', verifyUrl?.length);
       } catch (qrErr) {
         console.error('[approve] QR build error:', qrErr.message);
       }
     }
 
-    // Step 2: If no record sent or QR build failed, fetch from Sheet
+    // Fallback: fetch record from Sheet if admin didn't send it
     if (!qrDataURL) {
-      console.log('[approve] Fetching record from Sheet for token:', token.substring(0, 8));
-      try {
-        const rec = await sheetGet({ action: 'getByToken', token });
-        if (rec && rec.token) {
-          const built = await buildQR(rec, proto, host);
-          qrDataURL  = built.qrDataURL;
-          verifyUrl  = built.verifyUrl;
-        }
-      } catch (fetchErr) {
-        console.error('[approve] Sheet fetch error:', fetchErr.message);
+      const rec = await sheetGet({ action: 'getByToken', token });
+      if (rec && rec.token) {
+        const built = await buildQR(rec, proto, host);
+        qrDataURL   = built.qrDataURL;
+        verifyUrl   = built.verifyUrl;
       }
     }
 
-    // Step 3: Mark approved in Sheet (fire and forget — don't block the response)
+    // Mark approved in Sheet — fire-and-forget, don't block response
     sheet({ action: 'approve', token })
-      .then(r => console.log('[approve] Sheet approve result:', JSON.stringify(r)))
-      .catch(e => console.error('[approve] Sheet approve error:', e.message));
+      .catch(e => console.error('[approve] Sheet error:', e.message));
 
-    // Step 4: Update verifyUrl in Sheet (also fire and forget)
-    if (verifyUrl) {
-      sheet({ action: 'setVerifyUrl', token, verifyUrl })
-        .catch(e => console.error('[approve] setVerifyUrl error:', e.message));
-    }
-
-    // Step 5: Cache approval for instant confirm polling response
+    // Cache for instant confirm polling — no more Sheet reads for this token
     if (qrDataURL) {
       const rec = body.record || {};
       approvedCache.set(token, {
-        qrDataURL,
-        verifyUrl,
+        qrDataURL, verifyUrl,
         expiresAt: rec.expiresAtUTC || rec.expiresAt || null,
-        driver:    rec
+        driver: rec
       });
-      console.log('[approve] Cached QR for token:', token.substring(0, 8));
+      pendingCache.delete(token);
     }
 
     return res.json({ success: true, qrDataURL, verifyUrl, token });
@@ -351,20 +374,13 @@ app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
 app.post('/api/admin/reject/:token', adminAuth, async (req, res) => {
   try {
     const { token } = req.params;
-    await sheet({ action: 'reject', token });
+    // Fire-and-forget — reject is not time-critical for the response
+    sheet({ action: 'reject', token })
+      .catch(e => console.error('[reject] Sheet error:', e.message));
+    pendingCache.delete(token);
     return res.json({ success: true, token });
   } catch (e) {
     return res.status(500).json({ success: false, message: e.message });
-  }
-});
-
-// ── GET /api/admin/analytics ───────────────────────────────
-app.get('/api/admin/analytics', adminAuth, async (req, res) => {
-  try {
-    const data = await sheetGet({ action: 'analytics' });
-    return res.json(data || { today: 0, thisWeek: 0, thisMonth: 0, total: 0 });
-  } catch (e) {
-    return res.status(500).json({ error: e.message });
   }
 });
 
