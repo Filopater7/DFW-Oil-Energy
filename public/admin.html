@@ -405,8 +405,8 @@
           <td style="font-family:monospace">${esc(r.truckNumber || '')}</td>
           <td>${esc(r.phoneNumber || '')}</td>
           <td style="font-size:0.8rem;white-space:nowrap">${esc(r.startTime || '')}</td>
-          <td>${esc(r.parkingDuration || '')}</td>
-          <td style="font-size:0.75rem;color:var(--muted);white-space:nowrap">${esc(fmtDate(r.submittedAt))}</td>
+          <td>${esc(r.parkingDuration || r.durationLabel || '')}</td>
+          <td style="font-size:0.75rem;color:var(--muted);white-space:nowrap">${esc(fmtDate(r.submittedAt || r.startTime || ''))}</td>
           <td>
             ${badge}
             <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">${actions}</div>
