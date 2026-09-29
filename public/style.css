@@ -169,6 +169,7 @@ label {
 .req { color: var(--orange); }
 
 input[type="text"],
+input[type="email"],
 input[type="tel"],
 input[type="number"],
 input[type="datetime-local"] {
