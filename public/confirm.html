@@ -316,12 +316,18 @@
 
     function startPolling(token) {
       poll(token); // immediate first check
-      pollInterval = setInterval(() => poll(token), 5000);
+      pollInterval = setInterval(() => poll(token), 10000); // every 10s
     }
 
     async function poll(token) {
       pollCount++;
       const msgEl = document.getElementById('polling-msg');
+      // Stop polling after 10 minutes
+      if (pollCount > 60) {
+        clearInterval(pollInterval);
+        msgEl.textContent = 'Timed out. Please refresh the page to check your status.';
+        return;
+      }
       try {
         msgEl.textContent = 'Checking approval status…';
         const res    = await fetch(`/api/confirm/${encodeURIComponent(token)}`);

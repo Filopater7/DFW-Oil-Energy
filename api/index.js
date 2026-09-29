@@ -242,25 +242,40 @@ app.get('/api/admin/registrations', adminAuth, async (req, res) => {
 app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
   try {
     const { token } = req.params;
-    const result = await sheet({ action: 'approve', token });
+    const body  = req.body || {};
 
-    if (!result || result.success === false)
-      return res.status(404).json({ success: false, message: 'Token not found.' });
-
-    // Generate and return QR code for this newly approved record
+    // Run sheet approve in parallel with QR generation if we have the record data
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host  = req.headers.host;
 
-    // Fetch the full record to build QR
-    const rec = await sheetGet({ action: 'getByToken', token });
-    if (rec && rec.token) {
-      const { qrDataURL, verifyUrl } = await buildQR(rec, proto, host);
-      // Optionally update the sheet with the verifyUrl
-      sheet({ action: 'setVerifyUrl', token, verifyUrl }).catch(() => {});
-      return res.json({ success: true, qrDataURL, verifyUrl, token });
+    // Build QR from data sent by admin page (avoids extra Sheet round-trip)
+    let qrDataURL = null, verifyUrl = null;
+    if (body.record) {
+      const rec = body.record;
+      const built = await buildQR(rec, proto, host);
+      qrDataURL  = built.qrDataURL;
+      verifyUrl  = built.verifyUrl;
     }
 
-    return res.json({ success: true, token });
+    // Approve in Sheet + optionally set verifyUrl
+    const [approveResult] = await Promise.all([
+      sheet({ action: 'approve', token }),
+      verifyUrl ? sheet({ action: 'setVerifyUrl', token, verifyUrl }) : Promise.resolve()
+    ]);
+
+    if (!approveResult || approveResult.success === false) {
+      // Try fetching record to build QR as fallback
+      if (!qrDataURL) {
+        const rec = await sheetGet({ action: 'getByToken', token });
+        if (rec && rec.token) {
+          const built = await buildQR(rec, proto, host);
+          qrDataURL  = built.qrDataURL;
+          verifyUrl  = built.verifyUrl;
+        }
+      }
+    }
+
+    return res.json({ success: true, qrDataURL, verifyUrl, token });
   } catch (e) {
     console.error('[/api/admin/approve]', e.message);
     return res.status(500).json({ success: false, message: e.message });

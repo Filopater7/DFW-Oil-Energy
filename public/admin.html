@@ -329,8 +329,8 @@
     document.getElementById('refresh-btn').addEventListener('click', loadAll);
 
     async function loadAll() {
-      loadAnalytics();
-      loadRegistrations();
+      // Load both in parallel — faster than sequential
+      await Promise.all([loadAnalytics(), loadRegistrations()]);
     }
 
     // ── ANALYTICS ─────────────────────────────────────────────
@@ -425,16 +425,16 @@
 
     // ── APPROVE ───────────────────────────────────────────────
     async function approveToken(token) {
+      const rec = allRegs.find(r => r.token === token);
       try {
         const res  = await fetch(`/api/admin/approve/${encodeURIComponent(token)}`, {
           method: 'POST',
-          headers: { 'x-admin-password': adminPwd }
+          headers: { 'x-admin-password': adminPwd, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ record: rec || {} })  // send record so server skips extra Sheet fetch
         });
         const data = await res.json();
         if (data.success) {
           toast('✓ Registration approved!');
-          // Update local state
-          const rec = allRegs.find(r => r.token === token);
           if (rec) rec.approvalStatus = 'approved';
           renderTable();
           loadAnalytics();
