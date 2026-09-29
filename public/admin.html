@@ -12,14 +12,48 @@
     /* ── Login card ── */
     .login-card {
       max-width: 400px; margin: 60px auto;
-      background: var(--card-bg); border: 1px solid var(--border);
+      background: #FFFFFF; border: 1px solid var(--border);
       border-top: 4px solid var(--accent); border-radius: var(--radius);
       padding: 40px 32px; box-shadow: var(--shadow);
     }
     .login-card h2 { color: var(--accent); font-size: 1.3rem; margin-bottom: 20px; }
     .login-card input {
-      width: 100%; background: #0A1628; border: 1px solid var(--border);
-      border-radius: 7px; color: var(--text); font-size: 0.98rem;
+      width: 100%; background: #F4F6FA; border: 1px solid var(--border);
+      border-radius: 7px; color: #1B2A4A; font-size: 0.98rem;
+      padding: 11px 14px; outline: none; margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .login-card input:focus { border-color: var(--accent); }
+    .login-error { color: var(--error); font-size: 0.85rem; margin-bottom: 10px; }
+
+    /* ── Analytics cards ── */
+    .analytics-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 28px;
+    }
+    
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payless Fuel Centers of Texas – Admin</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Admin layout ── */
+    .admin-wrap { max-width: 1100px; margin: 0 auto; width: 100%; }
+
+    /* ── Login card ── */
+    .login-card {
+      max-width: 400px; margin: 60px auto;
+      background: #FFFFFF; border: 1px solid var(--border);
+      border-top: 4px solid var(--accent); border-radius: var(--radius);
+      padding: 40px 32px; box-shadow: var(--shadow);
+    }
+    .login-card h2 { color: var(--accent); font-size: 1.3rem; margin-bottom: 20px; }
+    .login-card input {
+      width: 100%; background: #F4F6FA; border: 1px solid var(--border);
+      border-radius: 7px; color: #1B2A4A; font-size: 0.98rem;
       padding: 11px 14px; outline: none; margin-bottom: 14px;
       transition: border-color 0.2s;
     }
@@ -32,7 +66,7 @@
       gap: 16px; margin-bottom: 28px;
     }
     .stat-card {
-      background: var(--card-bg); border: 1px solid var(--border);
+      background: #FFFFFF; border: 1px solid var(--border);
       border-radius: var(--radius); padding: 20px 18px; text-align: center;
     }
     .stat-card .stat-num {
@@ -41,7 +75,7 @@
     }
     .stat-card .stat-label {
       font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px;
-      color: var(--muted); margin-top: 6px;
+      color: #6B7FA8; margin-top: 6px;
     }
     .stat-card.pending-card-stat { border-top: 3px solid var(--red); }
     .stat-card.approved-card-stat { border-top: 3px solid #43A047; }
@@ -60,7 +94,7 @@
     /* ── Filter tabs ── */
     .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
     .tab-btn {
-      background: none; border: 1px solid var(--border); color: var(--muted);
+      background: none; border: 1px solid var(--border); color: #6B7FA8;
       border-radius: 20px; padding: 5px 16px; font-size: 0.82rem;
       cursor: pointer; transition: all 0.2s;
     }
@@ -71,14 +105,14 @@
 
     /* ── Registrations table ── */
     .reg-table-wrap {
-      background: var(--card-bg); border: 1px solid var(--border);
+      background: #FFFFFF; border: 1px solid var(--border);
       border-radius: var(--radius); overflow: hidden;
     }
     .reg-table {
       width: 100%; border-collapse: collapse; font-size: 0.88rem;
     }
     .reg-table thead tr {
-      background: #0A1628; border-bottom: 2px solid var(--border);
+      background: #F4F6FA; border-bottom: 2px solid var(--border);
     }
     .reg-table th {
       padding: 12px 14px; text-align: left; font-size: 0.75rem;
@@ -119,11 +153,11 @@
     .btn-reject:hover { background: rgba(229,57,53,0.25); }
 
     /* Loading / empty */
-    .table-loading { text-align: center; padding: 40px; color: var(--muted); }
+    .table-loading { text-align: center; padding: 40px; color: #6B7FA8; }
 
     /* Refresh button */
     .btn-refresh {
-      background: none; border: 1px solid var(--border); color: var(--muted);
+      background: none; border: 1px solid var(--border); color: #6B7FA8;
       padding: 7px 16px; border-radius: 7px; font-size: 0.82rem;
       cursor: pointer; transition: border-color 0.2s, color 0.2s;
       display: flex; align-items: center; gap: 6px;
@@ -133,8 +167,8 @@
     /* Toast notification */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
-      background: #222; border: 1px solid var(--accent);
-      color: var(--text); padding: 12px 20px; border-radius: 8px;
+      background: #222; border: 1px solid var(--navy);
+      color: #1B2A4A; padding: 12px 20px; border-radius: 8px;
       font-size: 0.88rem; z-index: 9999; opacity: 0;
       transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;
       pointer-events: none;
@@ -143,7 +177,7 @@
 
     /* Logout button */
     .btn-logout {
-      background: none; border: 1px solid var(--border); color: var(--muted);
+      background: none; border: 1px solid var(--border); color: #6B7FA8;
       padding: 6px 14px; border-radius: 6px; font-size: 0.82rem;
       cursor: pointer; transition: all 0.2s;
     }
@@ -187,7 +221,7 @@
 
         <!-- Header row -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-          <h2 style="color:var(--accent);font-size:1.3rem;font-weight:700;">Admin Dashboard</h2>
+          <h2 style="color:var(--navy);font-size:1.3rem;font-weight:700;">Admin Dashboard</h2>
           <div style="display:flex;gap:10px;">
             <button class="btn-refresh" id="refresh-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -232,7 +266,479 @@
 
         <div class="reg-table-wrap">
           <div class="table-loading" id="table-loading">
-            <div class="spinner" style="margin:0 auto 12px;border-color:rgba(201,168,76,0.3);border-top-color:var(--accent);width:28px;height:28px;"></div>
+            <div class="spinner" style="margin:0 auto 12px;border-color:rgba(201,168,76,0.3);border-top-color:var(--navy);width:28px;height:28px;"></div>
+            Loading registrations…
+          </div>
+          <table class="reg-table" id="reg-table" hidden>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Driver Name</th>
+                <th>Company</th>
+                <th>Truck #</th>
+                <th>Phone</th>
+                <th>Start Time</th>
+                <th>Duration</th>
+                <th>Submitted</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="reg-tbody"></tbody>
+          </table>
+          <div id="empty-msg" hidden style="text-align:center;padding:40px;color:var(--muted);">No registrations found.</div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Payless Fuel Centers of Texas . All rights reserved.</p>
+  </footer>
+
+  <div id="toast"></div>
+
+  <script>
+  (() => {
+    // ── State ──────────────────────────────────────────────────
+    let adminPwd     = '';
+    let allRegs      = [];
+    let activeFilter = 'all';
+
+    const loginSection    = document.getElementById('login-section');
+    const dashboardSection= document.getElementById('dashboard-section');
+    const pwdInput        = document.getElementById('pwd-input');
+    const loginBtn        = document.getElementById('login-btn');
+    const loginError      = document.getElementById('login-error');
+
+    // ── LOGIN ──────────────────────────────────────────────────
+    // Check if already logged in this session
+    const saved = sessionStorage.getItem('dfw_admin_pwd');
+    if (saved) { adminPwd = saved; showDashboard(); }
+
+    loginBtn.addEventListener('click', tryLogin);
+    pwdInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+    async function tryLogin() {
+      const pwd = pwdInput.value.trim();
+      if (!pwd) return;
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Checking…';
+      try {
+        const res = await fetch('/api/admin/analytics', {
+          headers: { 'x-admin-password': pwd }
+        });
+        if (res.ok) {
+          adminPwd = pwd;
+          sessionStorage.setItem('dfw_admin_pwd', pwd);
+          showDashboard();
+        } else {
+          loginError.textContent = 'Incorrect password.';
+          loginError.hidden = false;
+        }
+      } catch {
+        loginError.textContent = 'Could not connect. Try again.';
+        loginError.hidden = false;
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      sessionStorage.removeItem('dfw_admin_pwd');
+      adminPwd = '';
+      dashboardSection.hidden = true;
+      loginSection.hidden = false;
+      pwdInput.value = '';
+    });
+
+    function showDashboard() {
+      loginSection.hidden     = true;
+      dashboardSection.hidden = false;
+      loadAll();
+    }
+
+    // ── REFRESH ────────────────────────────────────────────────
+    document.getElementById('refresh-btn').addEventListener('click', loadAll);
+
+    async function loadAll() {
+      // Load both in parallel — faster than sequential
+      await Promise.all([loadAnalytics(), loadRegistrations()]);
+    }
+
+    // ── ANALYTICS ─────────────────────────────────────────────
+    async function loadAnalytics() {
+      try {
+        const res  = await fetch('/api/admin/analytics', { headers: { 'x-admin-password': adminPwd } });
+        const data = await res.json();
+        document.getElementById('stat-today').textContent = data.today  ?? '—';
+        document.getElementById('stat-week').textContent  = data.thisWeek ?? '—';
+        document.getElementById('stat-month').textContent = data.thisMonth ?? '—';
+        document.getElementById('stat-total').textContent = data.total  ?? '—';
+      } catch {
+        ['today','week','month','total'].forEach(k =>
+          document.getElementById(`stat-${k}`).textContent = '—'
+        );
+      }
+    }
+
+    // ── REGISTRATIONS ──────────────────────────────────────────
+    async function loadRegistrations() {
+      document.getElementById('table-loading').hidden = false;
+      document.getElementById('reg-table').hidden = true;
+      document.getElementById('empty-msg').hidden = true;
+      try {
+        const res  = await fetch('/api/admin/registrations', { headers: { 'x-admin-password': adminPwd } });
+        const data = await res.json();
+        allRegs = (data.registrations || []).reverse(); // newest first
+        renderTable();
+      } catch (e) {
+        document.getElementById('table-loading').textContent = 'Failed to load. ' + e.message;
+      }
+    }
+
+    function renderTable() {
+      document.getElementById('table-loading').hidden = true;
+      const filtered = activeFilter === 'all'
+        ? allRegs
+        : allRegs.filter(r => (r.approvalStatus || 'pending') === activeFilter);
+
+      if (!filtered.length) {
+        document.getElementById('empty-msg').hidden = false;
+        document.getElementById('reg-table').hidden = true;
+        return;
+      }
+
+      document.getElementById('reg-table').hidden = false;
+      document.getElementById('empty-msg').hidden = true;
+
+      const tbody = document.getElementById('reg-tbody');
+      tbody.innerHTML = filtered.map((r, i) => {
+        const status = r.approvalStatus || 'pending';
+        const badge  = status === 'approved'
+          ? '<span class="badge badge-approved">✓ Approved</span>'
+          : status === 'rejected'
+          ? '<span class="badge badge-rejected">✗ Rejected</span>'
+          : '<span class="badge badge-pending">⏳ Pending</span>';
+
+        const actions = status === 'pending'
+          ? `<button class="btn-approve" data-token="${esc(r.token)}">✓ Approve</button>
+             <button class="btn-reject"  data-token="${esc(r.token)}">✗ Reject</button>`
+          : status === 'approved'
+          ? `<button class="btn-reject" data-token="${esc(r.token)}">Revoke</button>`
+          : '—';
+
+        return `<tr>
+          <td style="color:var(--muted)">${i + 1}</td>
+          <td>
+            <strong>${esc(r.driverName || '')}</strong>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${esc(r.driverEmail || '')}</div>
+          </td>
+          <td>${esc(r.companyName || '')}</td>
+          <td style="font-family:monospace">${esc(r.truckNumber || '')}</td>
+          <td>${esc(r.phoneNumber || '')}</td>
+          <td style="font-size:0.8rem;white-space:nowrap">${esc(r.startTime || '')}</td>
+          <td>${esc(r.parkingDuration || r.durationLabel || '')}</td>
+          <td style="font-size:0.75rem;color:var(--muted);white-space:nowrap">${esc(fmtDate(r.submittedAt || r.startTime || ''))}</td>
+          <td>
+            ${badge}
+            <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">${actions}</div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      // Attach action handlers
+      tbody.querySelectorAll('.btn-approve').forEach(btn =>
+        btn.addEventListener('click', () => approveToken(btn.dataset.token))
+      );
+      tbody.querySelectorAll('.btn-reject').forEach(btn =>
+        btn.addEventListener('click', () => rejectToken(btn.dataset.token))
+      );
+    }
+
+    // ── APPROVE ───────────────────────────────────────────────
+    async function approveToken(token) {
+      const rec = allRegs.find(r => r.token === token);
+      const btn = document.querySelector(`.btn-approve[data-token="${token}"]`);
+      if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+      try {
+        const res  = await fetch(`/api/admin/approve/${encodeURIComponent(token)}`, {
+          method: 'POST',
+          headers: { 'x-admin-password': adminPwd, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ record: rec || {} })
+        });
+        const data = await res.json();
+        console.log('[approve response]', data);
+        if (data.success) {
+          toast('✓ Approved! Driver will see QR within 5 seconds.');
+          if (rec) rec.approvalStatus = 'approved';
+          renderTable();
+          loadAnalytics();
+        } else {
+          toast('Error: ' + (data.message || 'Could not approve.'));
+          if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+        }
+      } catch (e) {
+        toast('Network error: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+      }
+    }
+
+    // ── REJECT ────────────────────────────────────────────────
+    async function rejectToken(token) {
+      if (!confirm('Reject / revoke this registration?')) return;
+      try {
+        const res  = await fetch(`/api/admin/reject/${encodeURIComponent(token)}`, {
+          method: 'POST',
+          headers: { 'x-admin-password': adminPwd }
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast('Registration rejected.');
+          const rec = allRegs.find(r => r.token === token);
+          if (rec) rec.approvalStatus = 'rejected';
+          renderTable();
+          loadAnalytics();
+        }
+      } catch (e) { toast('Error: ' + e.message); }
+    }
+
+    // ── FILTER TABS ───────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        renderTable();
+      });
+    });
+
+    // ── HELPERS ───────────────────────────────────────────────
+    function fmtDate(iso) {
+      if (!iso) return '';
+      try { return new Date(iso).toLocaleString(); } catch { return iso; }
+    }
+
+    function esc(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    let toastTimer = null;
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+    }
+
+  })();
+  </script>
+</body>
+</html>
+.Value -replace 'background: var\(--card-bg\)', 'background: #FFFFFF'
+
+    .stat-card .stat-num {
+      font-size: 2.4rem; font-weight: 800; color: var(--accent);
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .stat-card .stat-label {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px;
+      color: #6B7FA8; margin-top: 6px;
+    }
+    .stat-card.pending-card-stat { border-top: 3px solid var(--red); }
+    .stat-card.approved-card-stat { border-top: 3px solid #43A047; }
+    .stat-card.today-card { border-top: 3px solid var(--accent); }
+    .stat-card.week-card  { border-top: 3px solid #1565C0; }
+    .stat-card.month-card { border-top: 3px solid #6A1B9A; }
+    .stat-card.total-card { border-top: 3px solid var(--muted); }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-header h3 { font-size: 1.1rem; color: var(--accent); font-weight: 700; }
+
+    /* ── Filter tabs ── */
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab-btn {
+      background: none; border: 1px solid var(--border); color: #6B7FA8;
+      border-radius: 20px; padding: 5px 16px; font-size: 0.82rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn:hover, .tab-btn.active {
+      border-color: var(--accent); color: var(--accent); background: rgba(201,168,76,0.08);
+    }
+    .tab-btn.active { font-weight: 700; }
+
+    /* ── Registrations table ── */
+    .reg-table-wrap {
+      background: #FFFFFF; border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .reg-table {
+      width: 100%; border-collapse: collapse; font-size: 0.88rem;
+    }
+    .reg-table thead tr {
+      background: #F4F6FA; border-bottom: 2px solid var(--border);
+    }
+    .reg-table th {
+      padding: 12px 14px; text-align: left; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent);
+      font-weight: 700; white-space: nowrap;
+    }
+    .reg-table td {
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .reg-table tbody tr:last-child td { border-bottom: none; }
+    .reg-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 12px;
+      font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+    }
+    .badge-pending  { background: rgba(224,123,32,0.15); color: var(--red);  border: 1px solid rgba(224,123,32,0.4); }
+    .badge-approved { background: rgba(67,160,71,0.15);  color: #81C784;        border: 1px solid rgba(67,160,71,0.4); }
+    .badge-rejected { background: rgba(229,57,53,0.15);  color: #EF9A9A;        border: 1px solid rgba(229,57,53,0.4); }
+
+    /* Action buttons */
+    .btn-approve {
+      background: rgba(67,160,71,0.15); border: 1px solid #43A047;
+      color: #81C784; padding: 4px 12px; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-approve:hover { background: rgba(67,160,71,0.35); }
+    .btn-reject {
+      background: rgba(229,57,53,0.1); border: 1px solid var(--error);
+      color: #EF9A9A; padding: 4px 12px; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-reject:hover { background: rgba(229,57,53,0.25); }
+
+    /* Loading / empty */
+    .table-loading { text-align: center; padding: 40px; color: #6B7FA8; }
+
+    /* Refresh button */
+    .btn-refresh {
+      background: none; border: 1px solid var(--border); color: #6B7FA8;
+      padding: 7px 16px; border-radius: 7px; font-size: 0.82rem;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Toast notification */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #222; border: 1px solid var(--navy);
+      color: #1B2A4A; padding: 12px 20px; border-radius: 8px;
+      font-size: 0.88rem; z-index: 9999; opacity: 0;
+      transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Logout button */
+    .btn-logout {
+      background: none; border: 1px solid var(--border); color: #6B7FA8;
+      padding: 6px 14px; border-radius: 6px; font-size: 0.82rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--error); color: #EF9A9A; }
+
+    @media (max-width: 768px) {
+      .analytics-row { grid-template-columns: 1fr 1fr; }
+      .reg-table { font-size: 0.78rem; }
+      .reg-table th, .reg-table td { padding: 8px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <img src="assets/logo.jpg" alt="Payless Fuel Centers of Texas Logo" class="logo" />
+      <div class="header-text">
+        <h1>Payless Fuel Centers of Texas</h1>
+        <p class="subtitle">Truck Parking — Admin Panel</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="admin-wrap">
+
+      <!-- ── LOGIN ── -->
+      <div id="login-section">
+        <div class="login-card">
+          <h2>🔐 Admin Login</h2>
+          <p style="color:var(--muted);font-size:0.88rem;margin-bottom:20px;">Enter your admin password to access the dashboard.</p>
+          <input type="password" id="pwd-input" placeholder="Admin password" autocomplete="current-password" />
+          <div class="login-error" id="login-error" hidden></div>
+          <button class="btn-submit" id="login-btn" style="padding:12px;">Login</button>
+        </div>
+      </div>
+
+      <!-- ── DASHBOARD ── -->
+      <div id="dashboard-section" hidden>
+
+        <!-- Header row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+          <h2 style="color:var(--navy);font-size:1.3rem;font-weight:700;">Admin Dashboard</h2>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-refresh" id="refresh-btn">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Refresh
+            </button>
+            <button class="btn-logout" id="logout-btn">Logout</button>
+          </div>
+        </div>
+
+        <!-- ── ANALYTICS ── -->
+        <div class="analytics-row" id="analytics-row">
+          <div class="stat-card today-card">
+            <div class="stat-num" id="stat-today">—</div>
+            <div class="stat-label">Today</div>
+          </div>
+          <div class="stat-card week-card">
+            <div class="stat-num" id="stat-week">—</div>
+            <div class="stat-label">This Week</div>
+          </div>
+          <div class="stat-card month-card">
+            <div class="stat-num" id="stat-month">—</div>
+            <div class="stat-label">This Month</div>
+          </div>
+          <div class="stat-card total-card">
+            <div class="stat-num" id="stat-total">—</div>
+            <div class="stat-label">Total</div>
+          </div>
+        </div>
+
+        <!-- ── REGISTRATIONS TABLE ── -->
+        <div class="section-header">
+          <h3>Registrations</h3>
+          <div class="filter-tabs">
+            <button class="tab-btn active" data-filter="all">All</button>
+            <button class="tab-btn" data-filter="pending">Pending</button>
+            <button class="tab-btn" data-filter="approved">Approved</button>
+            <button class="tab-btn" data-filter="rejected">Rejected</button>
+          </div>
+        </div>
+
+        <div class="reg-table-wrap">
+          <div class="table-loading" id="table-loading">
+            <div class="spinner" style="margin:0 auto 12px;border-color:rgba(201,168,76,0.3);border-top-color:var(--navy);width:28px;height:28px;"></div>
             Loading registrations…
           </div>
           <table class="reg-table" id="reg-table" hidden>
