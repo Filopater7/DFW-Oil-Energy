@@ -44,11 +44,11 @@
 
     /* Not found (orange) */
     .status-card.not-found {
-      border: 2px solid var(--orange);
+      border: 2px solid var(--red);
       background: rgba(224,123,32,0.08);
     }
     .status-card.not-found .status-header {
-      background: linear-gradient(90deg, #bf360c, var(--orange));
+      background: linear-gradient(90deg, #bf360c, var(--red));
     }
 
     .status-header {
@@ -127,13 +127,13 @@
     }
     .vc-cell {
       display: flex; flex-direction: column; align-items: center;
-      background: #1a1a1a; border: 1px solid var(--border);
+      background: #0A1628; border: 1px solid var(--border);
       border-radius: 7px; padding: 8px 12px; min-width: 52px;
     }
     .vc-cell .num {
       font-size: 1.4rem; font-weight: 700;
       font-variant-numeric: tabular-nums;
-      color: var(--gold); line-height: 1;
+      color: var(--accent); line-height: 1;
     }
     .vc-cell .unit {
       font-size: 0.65rem; text-transform: uppercase;
@@ -148,7 +148,7 @@
     .verify-loading .spinner {
       margin: 0 auto 16px;
       border-color: rgba(201,168,76,0.3);
-      border-top-color: var(--gold);
+      border-top-color: var(--accent);
       width: 40px; height: 40px;
     }
 
@@ -169,7 +169,7 @@
       transition: border-color 0.2s, color 0.2s;
       margin-top: 12px;
     }
-    .btn-back:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-back:hover { border-color: var(--accent); color: var(--accent); }
 
     @media (max-width: 480px) {
       .info-grid { grid-template-columns: 1fr; }

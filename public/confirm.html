@@ -12,7 +12,7 @@
     .pending-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-top: 4px solid var(--gold);
+      border-top: 4px solid var(--accent);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 40px 32px;
@@ -22,7 +22,7 @@
       width: 80px; height: 80px;
       border-radius: 50%;
       background: rgba(201,168,76,0.12);
-      border: 3px solid var(--gold);
+      border: 3px solid var(--accent);
       display: flex; align-items: center; justify-content: center;
       font-size: 2.2rem;
       margin: 0 auto 20px;
@@ -34,14 +34,14 @@
     }
     .pending-title {
       font-size: 1.5rem; font-weight: 700;
-      color: var(--gold); margin-bottom: 8px;
+      color: var(--accent); margin-bottom: 8px;
     }
     .pending-sub {
       color: var(--muted); font-size: 0.95rem; margin-bottom: 28px;
       max-width: 420px; margin-left: auto; margin-right: auto;
     }
     .pending-info {
-      background: #1a1a1a; border: 1px solid var(--border);
+      background: #0A1628; border: 1px solid var(--border);
       border-radius: var(--radius); padding: 18px 22px;
       text-align: left; margin-bottom: 24px;
     }
@@ -58,7 +58,7 @@
     }
     .polling-dot {
       width: 8px; height: 8px; border-radius: 50%;
-      background: var(--gold); animation: blink 1.4s ease-in-out infinite;
+      background: var(--accent); animation: blink 1.4s ease-in-out infinite;
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
@@ -90,11 +90,11 @@
 
     .qr-section {
       display: flex; flex-direction: column; align-items: center; gap: 16px;
-      background: #1a1a1a; border: 1px solid var(--border);
-      border-top: 3px solid var(--gold); border-radius: var(--radius);
+      background: #0A1628; border: 1px solid var(--border);
+      border-top: 3px solid var(--accent); border-radius: var(--radius);
       padding: 28px 20px; margin-bottom: 24px;
     }
-    .qr-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); }
+    .qr-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
     .qr-img-wrap {
       background: #fff; padding: 14px; border-radius: 12px;
       box-shadow: 0 0 24px rgba(201,168,76,0.25);
@@ -104,9 +104,9 @@
 
     .expiry-badge {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(224,123,32,0.12); border: 1px solid var(--orange);
+      background: rgba(224,123,32,0.12); border: 1px solid var(--red);
       border-radius: 20px; padding: 6px 16px; font-size: 0.85rem;
-      font-weight: 600; color: var(--orange);
+      font-weight: 600; color: var(--red);
     }
 
     .countdown-wrap { text-align: center; }
@@ -114,25 +114,25 @@
     .countdown-grid { display: flex; gap: 10px; justify-content: center; }
     .countdown-cell {
       display: flex; flex-direction: column; align-items: center;
-      background: #1a1a1a; border: 1px solid var(--border);
+      background: #0A1628; border: 1px solid var(--border);
       border-radius: 8px; padding: 10px 14px; min-width: 56px;
     }
-    .countdown-cell .num { font-size: 1.6rem; font-weight: 700; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
+    .countdown-cell .num { font-size: 1.6rem; font-weight: 700; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
     .countdown-cell .unit { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-top: 4px; }
     .countdown-expired { font-size: 1rem; font-weight: 700; color: var(--error); }
 
     .btn-download {
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 13px; background: none; border: 2px solid var(--gold);
-      border-radius: var(--radius); color: var(--gold); font-size: 0.95rem;
+      width: 100%; padding: 13px; background: none; border: 2px solid var(--accent);
+      border-radius: var(--radius); color: var(--accent); font-size: 0.95rem;
       font-weight: 600; cursor: pointer; text-decoration: none;
       transition: background 0.2s, color 0.2s; margin-bottom: 12px;
     }
-    .btn-download:hover { background: var(--gold); color: var(--black); }
+    .btn-download:hover { background: var(--accent); color: var(--black); }
     .btn-new {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; padding: 13px;
-      background: linear-gradient(90deg, var(--gold), var(--orange));
+      background: linear-gradient(90deg, var(--accent), var(--red));
       border: none; border-radius: var(--radius); color: var(--black);
       font-size: 0.95rem; font-weight: 700; cursor: pointer;
       text-decoration: none; transition: opacity 0.2s;
@@ -162,7 +162,7 @@
 
       <!-- Loading -->
       <div id="loading-state" style="text-align:center;padding:60px;">
-        <div class="spinner" style="margin:0 auto;border-color:rgba(201,168,76,0.3);border-top-color:var(--gold);width:36px;height:36px;"></div>
+        <div class="spinner" style="margin:0 auto;border-color:rgba(201,168,76,0.3);border-top-color:var(--accent);width:36px;height:36px;"></div>
         <p style="margin-top:16px;color:var(--muted);">Loading…</p>
       </div>
 

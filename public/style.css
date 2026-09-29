@@ -1,31 +1,40 @@
 /* ============================================================
    Payless Fuel Centers of Texas – Truck Parking Registration
-   Brand palette:
-     Navy  : #1B2A4A
-     Red   : #C8102E
-     White : #FFFFFF
-     Light : #E8ECF4
+   Brand palette — All Navy Blue theme:
+     Deep Navy  : #0A1628
+     Navy       : #1B2A4A
+     Mid Navy   : #243655
+     Light Navy : #2E4270
+     Accent     : #4A6FA5   (lighter blue for highlights)
+     Red        : #C8102E   (logo accent only)
+     White      : #FFFFFF
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --black:   #0D1526;
-  --gold:    #C8102E;
-  --gold-lt: #E8395A;
-  --orange:  #C8102E;
-  --green:   #1B6B3A;
+  --deep:    #0A1628;
+  --navy:    #1B2A4A;
+  --mid:     #243655;
+  --light:   #2E4270;
+  --accent:  #4A6FA5;
+  --red:     #C8102E;
   --white:   #FFFFFF;
-  --bg:      #0f1825;
-  --card-bg: #1a2540;
-  --border:  #2a3a5c;
-  --text:    #EEF0F5;
-  --muted:   #7B8BAD;
+  --bg:      #0A1628;
+  --card-bg: #1B2A4A;
+  --border:  #2E4270;
+  --text:    #E8EDF5;
+  --muted:   #7B9AC4;
   --error:   #E53935;
   --success: #2E7D32;
-  --navy:    #1B2A4A;
+  /* Keep old variable names so existing components still work */
+  --black:   #0A1628;
+  --gold:    #4A6FA5;
+  --gold-lt: #6B8FC5;
+  --orange:  #C8102E;
+  --green:   #2E7D32;
   --radius:  10px;
-  --shadow:  0 8px 32px rgba(0,0,0,0.6);
+  --shadow:  0 8px 32px rgba(0,0,0,0.65);
 }
 
 html { scroll-behavior: smooth; }
@@ -41,8 +50,8 @@ body {
 
 /* ── HEADER ─────────────────────────────────────────────── */
 .site-header {
-  background: linear-gradient(135deg, #0D1526 0%, #1B2A4A 60%, #0D1526 100%);
-  border-bottom: 3px solid #C8102E;
+  background: linear-gradient(135deg, #0A1628 0%, #1B2A4A 50%, #0A1628 100%);
+  border-bottom: 3px solid var(--red);
   padding: 18px 32px;
 }
 
@@ -58,19 +67,16 @@ body {
   width: 90px;
   height: 90px;
   border-radius: 8px;
-  border: 2px solid #C8102E;
+  border: 2px solid var(--accent);
   object-fit: cover;
   flex-shrink: 0;
-  box-shadow: 0 0 16px rgba(200,16,46,0.4);
+  box-shadow: 0 0 20px rgba(74,111,165,0.5);
 }
 
 .header-text h1 {
   font-size: 2rem;
   font-weight: 800;
-  background: linear-gradient(90deg, #FFFFFF 0%, #E8ECF4 60%, #C8102E 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #FFFFFF;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -94,7 +100,7 @@ body {
 .form-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-top: 4px solid #C8102E;
+  border-top: 4px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 40px 40px 48px;
@@ -105,7 +111,7 @@ body {
 .form-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--gold);
+  color: #FFFFFF;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
@@ -129,7 +135,7 @@ body {
 }
 
 .banner-success {
-  background: rgba(67,160,71,0.15);
+  background: rgba(46,125,50,0.15);
   border: 1px solid var(--success);
   color: #81C784;
 }
@@ -161,19 +167,19 @@ body {
 label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--gold-lt);
+  color: #A8BFE0;
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
 
-.req { color: var(--orange); }
+.req { color: var(--red); }
 
 input[type="text"],
 input[type="email"],
 input[type="tel"],
 input[type="number"],
 input[type="datetime-local"] {
-  background: #1a1a1a;
+  background: var(--deep);
   border: 1px solid var(--border);
   border-radius: 7px;
   color: var(--text);
@@ -185,8 +191,8 @@ input[type="datetime-local"] {
 }
 
 input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201,168,76,0.18);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74,111,165,0.25);
 }
 
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
@@ -203,28 +209,26 @@ input.invalid { border-color: var(--error) !important; }
 }
 
 /* ── CAMERA CAPTURE ─────────────────────────────────────── */
-
-/* Idle state – "Open Camera" button */
 .camera-idle {
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
-  background: #1a1a1a;
+  background: var(--deep);
   padding: 28px 16px;
   transition: border-color 0.2s;
 }
 
-.camera-idle:hover { border-color: var(--gold); }
+.camera-idle:hover { border-color: var(--accent); }
 
 .btn-open-camera {
   display: flex;
   align-items: center;
   gap: 10px;
   background: none;
-  border: 2px solid var(--gold);
-  color: var(--gold);
+  border: 2px solid var(--accent);
+  color: var(--accent);
   font-size: 1rem;
   font-weight: 600;
   padding: 12px 28px;
@@ -235,13 +239,12 @@ input.invalid { border-color: var(--error) !important; }
 }
 
 .btn-open-camera:hover {
-  background: var(--gold);
-  color: var(--black);
+  background: var(--accent);
+  color: var(--white);
 }
 
 .btn-open-camera svg { flex-shrink: 0; }
 
-/* Live camera preview */
 .camera-preview-wrap {
   position: relative;
   border-radius: var(--radius);
@@ -258,7 +261,6 @@ input.invalid { border-color: var(--error) !important; }
   background: #000;
 }
 
-/* Guide overlay frame */
 .camera-overlay {
   position: absolute;
   inset: 0;
@@ -271,7 +273,7 @@ input.invalid { border-color: var(--error) !important; }
 .camera-frame {
   width: 82%;
   height: 58%;
-  border: 2.5px solid var(--gold);
+  border: 2.5px solid var(--accent);
   border-radius: 10px;
   box-shadow: 0 0 0 9999px rgba(0,0,0,0.38);
   display: flex;
@@ -282,14 +284,13 @@ input.invalid { border-color: var(--error) !important; }
 
 .frame-label {
   background: rgba(0,0,0,0.55);
-  color: var(--gold-lt);
+  color: #A8BFE0;
   font-size: 0.75rem;
   padding: 3px 10px;
   border-radius: 20px;
   letter-spacing: 0.3px;
 }
 
-/* Camera controls bar */
 .camera-controls {
   position: absolute;
   bottom: 0;
@@ -302,7 +303,6 @@ input.invalid { border-color: var(--error) !important; }
   background: linear-gradient(transparent, rgba(0,0,0,0.75));
 }
 
-/* Side action buttons (switch / cancel) */
 .btn-cam-action {
   width: 44px;
   height: 44px;
@@ -319,7 +319,6 @@ input.invalid { border-color: var(--error) !important; }
 
 .btn-cam-action:hover { background: rgba(255,255,255,0.18); border-color: #fff; }
 
-/* Shutter button */
 .btn-capture {
   width: 68px;
   height: 68px;
@@ -345,11 +344,10 @@ input.invalid { border-color: var(--error) !important; }
   transition: background 0.2s;
 }
 
-.btn-capture:hover .capture-ring { background: var(--gold-lt); }
+.btn-capture:hover .capture-ring { background: #A8BFE0; }
 
-/* Captured photo preview */
 .camera-captured {
-  border: 2px solid var(--green);
+  border: 2px solid var(--accent);
   border-radius: var(--radius);
   overflow: hidden;
   background: #111;
@@ -368,7 +366,7 @@ input.invalid { border-color: var(--error) !important; }
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: #1e1e1e;
+  background: var(--mid);
   border-top: 1px solid var(--border);
 }
 
@@ -380,8 +378,8 @@ input.invalid { border-color: var(--error) !important; }
 
 .btn-retake {
   background: none;
-  border: 1px solid var(--gold);
-  color: var(--gold);
+  border: 1px solid var(--accent);
+  color: var(--accent);
   font-size: 0.82rem;
   padding: 5px 14px;
   border-radius: 5px;
@@ -390,8 +388,8 @@ input.invalid { border-color: var(--error) !important; }
 }
 
 .btn-retake:hover {
-  background: var(--gold);
-  color: var(--black);
+  background: var(--accent);
+  color: var(--white);
 }
 
 /* ── DURATION ROW ───────────────────────────────────────── */
@@ -411,7 +409,7 @@ input.invalid { border-color: var(--error) !important; }
 
 .duration-unit input[type="number"] {
   width: 100%;
-  background: #1a1a1a;
+  background: var(--deep);
   border: 1px solid var(--border);
   border-radius: 7px;
   color: var(--text);
@@ -430,8 +428,8 @@ input.invalid { border-color: var(--error) !important; }
 }
 
 .duration-unit input[type="number"]:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201,168,76,0.18);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74,111,165,0.25);
 }
 
 .duration-unit input[type="number"].invalid {
@@ -449,7 +447,7 @@ input.invalid { border-color: var(--error) !important; }
 .duration-sep {
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--accent);
   padding-top: 8px;
   user-select: none;
 }
@@ -475,7 +473,7 @@ input.invalid { border-color: var(--error) !important; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #2a2a2a;
+  background: var(--mid);
   padding: 8px 14px;
   border-top: 1px solid var(--border);
 }
@@ -487,8 +485,8 @@ input.invalid { border-color: var(--error) !important; }
 
 .btn-clear-sig {
   background: none;
-  border: 1px solid var(--gold);
-  color: var(--gold);
+  border: 1px solid var(--accent);
+  color: var(--accent);
   font-size: 0.82rem;
   padding: 5px 14px;
   border-radius: 5px;
@@ -497,8 +495,8 @@ input.invalid { border-color: var(--error) !important; }
 }
 
 .btn-clear-sig:hover {
-  background: var(--gold);
-  color: var(--black);
+  background: var(--accent);
+  color: var(--white);
 }
 
 /* ── SUBMIT BUTTON ──────────────────────────────────────── */
@@ -507,7 +505,7 @@ input.invalid { border-color: var(--error) !important; }
 .btn-submit {
   width: 100%;
   padding: 15px 24px;
-  background: linear-gradient(90deg, #C8102E 0%, #1B2A4A 100%);
+  background: linear-gradient(90deg, var(--red) 0%, #9B0E24 100%);
   border: none;
   border-radius: var(--radius);
   color: var(--white);
@@ -537,8 +535,8 @@ input.invalid { border-color: var(--error) !important; }
 .spinner {
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(17,17,17,0.3);
-  border-top-color: var(--black);
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: var(--white);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -547,7 +545,7 @@ input.invalid { border-color: var(--error) !important; }
 
 /* ── FOOTER ─────────────────────────────────────────────── */
 .site-footer {
-  background: #0D1526;
+  background: #080F1E;
   border-top: 1px solid var(--border);
   text-align: center;
   padding: 16px;
