@@ -1,12 +1,12 @@
 /* ============================================================
-   api/index.js  –  Vercel serverless handler (minimal, no deps)
+   api/index.js  –  Vercel serverless handler
+   Persistence: Google Apps Script Web App (no in-memory store)
    ============================================================ */
 'use strict';
 
-const express        = require('express');
-const QRCode         = require('qrcode');
+const express = require('express');
+const QRCode  = require('qrcode');
 
-// Inline UUID v4 — no dependency needed
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0;
@@ -17,13 +17,34 @@ function uuidv4() {
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
-// In-memory store — survives across warm invocations
-if (!global._dfwStore) global._dfwStore = new Map();
-const store = global._dfwStore;
+// ── Google Apps Script endpoint ────────────────────────────
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJ4v990ZHPfBPQkt7LGfgaDHJDovsHiBWZwMDEWCAXR6bFQKsEKu2Ml9cuvoqTYFNm/exec';
+
+// POST data to sheet
+async function saveToSheet(payload) {
+  const res = await fetch(SHEET_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+    redirect: 'follow'
+  });
+  const text = await res.text();
+  console.log('[Sheets] save response:', text);
+  return text;
+}
+
+// GET a record by token from sheet
+async function getFromSheet(token) {
+  const url = `${SHEET_URL}?action=getByToken&token=${encodeURIComponent(token)}`;
+  const res  = await fetch(url, { redirect: 'follow' });
+  const text = await res.text();
+  console.log('[Sheets] get response:', text.substring(0, 200));
+  try { return JSON.parse(text); } catch { return null; }
+}
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', entries: store.size, time: new Date().toISOString() });
+  res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
 // ── Submit ─────────────────────────────────────────────────
@@ -50,14 +71,12 @@ app.post('/api/submit', async (req, res) => {
     const totalMins = days * 1440 + hours * 60 + mins;
     if (totalMins < 1)
       return res.status(422).json({ success: false, message: 'Parking duration must be at least 1 minute.' });
-    if (!b.phoneNumber  || !/^[\d\s\(\)\+\-\.]{7,20}$/.test(String(b.phoneNumber).trim()))
-      return res.status(422).json({ success: false, message: 'A valid phone number is required.' });
     if (!b.licenseImageData || !String(b.licenseImageData).startsWith('data:image/'))
       return res.status(422).json({ success: false, message: 'A captured license photo is required.' });
     if (!b.signatureData    || !String(b.signatureData).startsWith('data:image/'))
       return res.status(422).json({ success: false, message: 'A driver signature is required.' });
 
-    // Generate token and expiry
+    // Generate token + expiry
     const token      = uuidv4();
     const tzOffset   = Number(b.tzOffset) || 0;
     const startUTC   = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
@@ -68,65 +87,38 @@ app.post('/api/submit', async (req, res) => {
       mins  > 0 ? `${mins}m`  : ''
     ].filter(Boolean).join(' ') || '0m';
 
-    // Build verify URL
     const proto     = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host      = req.headers.host;
     const verifyUrl = `${proto}://${host}/verify.html?token=${token}`;
 
-    // Generate QR code
     const qrDataURL = await QRCode.toDataURL(verifyUrl, {
-      errorCorrectionLevel: 'H',
-      margin: 2,
-      width: 300,
+      errorCorrectionLevel: 'H', margin: 2, width: 300,
       color: { dark: '#111111', light: '#FFFFFF' }
     });
 
-    // Save to memory
-    store.set(token, {
+    // Save to Google Sheet (primary persistent store)
+    await saveToSheet({
+      action:          'save',
       token,
-      expiresAt:     expiresAt.toISOString(),
-      startTimeUTC:  startUTC.toISOString(),
-      submittedAt:   new Date().toISOString(),
-      companyName:   String(b.companyName).trim(),
-      driverName:    String(b.driverName).trim(),
-      truckNumber:   String(b.truckNumber).trim(),
-      driverEmail:   String(b.driverEmail).trim(),
-      startTime:     b.startTime,
-      durationDays:  days,
-      durationHours: hours,
-      durationMins:  mins,
-      durationLabel,
-      phoneNumber:   String(b.phoneNumber).trim()
-    });
-
-    // ── Save to Google Sheet (fire and forget) ──────────────
-    const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJ4v990ZHPfBPQkt7LGfgaDHJDovsHiBWZwMDEWCAXR6bFQKsEKu2Ml9cuvoqTYFNm/exec';
-    const sheetPayload = {
-      submittedAt:   new Date().toISOString(),
-      companyName:   String(b.companyName).trim(),
-      driverName:    String(b.driverName).trim(),
-      driverEmail:   String(b.driverEmail).trim(),
-      truckNumber:   String(b.truckNumber).trim(),
-      phoneNumber:   String(b.phoneNumber).trim(),
-      startTime:     b.startTime,
+      submittedAt:     new Date().toISOString(),
+      companyName:     String(b.companyName).trim(),
+      driverName:      String(b.driverName).trim(),
+      driverEmail:     String(b.driverEmail).trim(),
+      truckNumber:     String(b.truckNumber).trim(),
+      phoneNumber:     String(b.phoneNumber).trim(),
+      startTime:       b.startTime,
+      startTimeUTC:    startUTC.toISOString(),
       parkingDuration: durationLabel,
-      expiresAt:     expiresAt.toISOString(),
-      token,
+      durationDays:    days,
+      durationHours:   hours,
+      durationMins:    mins,
+      expiresAt:       expiresAt.toISOString(),
       verifyUrl
-    };
-
-    fetch(SHEET_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(sheetPayload)
-    })
-    .then(r => r.text())
-    .then(t => console.log('[Sheets] Response:', t))
-    .catch(e => console.warn('[Sheets] Error:', e.message));
+    });
 
     return res.json({
       success:   true,
-      message:   'Driver record submitted successfully.',
+      message:   'Parking registration submitted successfully.',
       token,
       expiresAt: expiresAt.toISOString(),
       qrDataURL,
@@ -151,10 +143,11 @@ app.post('/api/submit', async (req, res) => {
 });
 
 // ── Verify ─────────────────────────────────────────────────
-app.get('/api/verify/:token', (req, res) => {
+app.get('/api/verify/:token', async (req, res) => {
   try {
-    const rec = store.get(req.params.token);
-    if (!rec)
+    const rec = await getFromSheet(req.params.token);
+
+    if (!rec || !rec.token)
       return res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
 
     const now        = new Date();
@@ -163,22 +156,23 @@ app.get('/api/verify/:token', (req, res) => {
     const status     = notStarted ? 'not_started' : expired ? 'expired' : 'active';
 
     return res.json({
-      valid:        status === 'active',
+      valid:         status === 'active',
       status,
-      token:        rec.token,
-      expiresAt:    rec.expiresAt,
-      submittedAt:  rec.submittedAt,
-      driverName:    rec.driverName,
+      token:         rec.token,
+      expiresAt:     rec.expiresAt,
+      submittedAt:   rec.submittedAt,
       companyName:   rec.companyName,
+      driverName:    rec.driverName,
       truckNumber:   rec.truckNumber,
       driverEmail:   rec.driverEmail,
       startTime:     rec.startTime,
-      durationLabel: rec.durationLabel,
+      durationLabel: rec.parkingDuration || rec.durationLabel,
       durationDays:  rec.durationDays,
       durationHours: rec.durationHours,
       durationMins:  rec.durationMins,
       phoneNumber:   rec.phoneNumber
     });
+
   } catch (e) {
     console.error('[/api/verify crash]', e.stack || e.message);
     return res.status(500).json({ valid: false, message: 'Server error: ' + e.message });
