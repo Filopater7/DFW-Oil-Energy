@@ -20,8 +20,6 @@ const app = express();
 app.use(express.json({ limit: '15mb' }));
 
 const SHEET_URL = process.env.GOOGLE_SHEET_URL || '';
-
-// ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
@@ -96,28 +94,30 @@ app.post('/api/submit', async (req, res) => {
       color: { dark: '#111111', light: '#FFFFFF' }
     });
 
-    // Save to Google Sheet for records (fire and forget — don't await)
-    fetch(SHEET_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token,
-        submittedAt:     record.sa,
-        companyName:     record.cn,
-        driverName:      record.dn,
-        driverEmail:     record.de,
-        truckNumber:     record.tn,
-        phoneNumber:     record.ph,
-        startTime:       record.st,
-        parkingDuration: record.dl,
-        expiresAt:       record.ex,
-        verifyUrl
-      }),
-      redirect: 'follow'
-    })
-    .then(r => r.text())
-    .then(t => console.log('[Sheets]', t.substring(0, 100)))
-    .catch(e => console.warn('[Sheets] Error:', e.message));
+    // Save to Google Sheet (fire and forget)
+    if (process.env.GOOGLE_SHEET_URL) {
+      fetch(process.env.GOOGLE_SHEET_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName:      String(b.companyName).trim(),
+          driverName:       String(b.driverName).trim(),
+          driverEmail:      String(b.driverEmail).trim(),
+          truckNumber:      String(b.truckNumber).trim(),
+          phoneNumber:      String(b.phoneNumber).trim(),
+          startTime:        new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
+          parkingDuration:  durationLabel,
+          expiresAt:        new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
+          verifyUrl,
+          licenseImage:     String(b.licenseImageData || ''),
+          signatureImage:   String(b.signatureData || '')
+        }),
+        redirect: 'follow'
+      })
+      .then(r => r.text())
+      .then(t => console.log('[Sheets]', t.substring(0, 100)))
+      .catch(e => console.warn('[Sheets] Error:', e.message));
+    }
 
     return res.json({
       success:   true,
