@@ -290,11 +290,13 @@
       const result = await response.json();
 
       if (response.ok && result.success) {
+        // Store token + driver info — QR comes after admin approval
         sessionStorage.setItem('dfw_confirm_data', JSON.stringify({
-          qrDataURL: result.qrDataURL,
-          token:     result.token,
-          expiresAt: result.expiresAt,
-          driver:    result.driver
+          token:          result.token,
+          approvalStatus: result.approvalStatus || 'pending',
+          qrDataURL:      result.qrDataURL || null,
+          expiresAt:      result.expiresAt  || null,
+          driver:         result.driver
         }));
         sessionStorage.setItem('submitted', 'true');
         window.location.href = 'confirm.html';

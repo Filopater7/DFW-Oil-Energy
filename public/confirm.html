@@ -3,213 +3,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DFW Oil Energy – Parking Registration Confirmed</title>
+  <title>DFW Oil Energy – Registration Status</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* ── Confirmation-page extras ── */
-    .confirm-wrap {
-      max-width: 680px;
-      margin: 0 auto;
-      width: 100%;
-    }
+    .confirm-wrap { max-width: 680px; margin: 0 auto; width: 100%; }
 
-    /* Success header badge */
-    .success-badge {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
+    /* ── Pending state ── */
+    .pending-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--gold);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 32px;
       text-align: center;
     }
-    .success-icon {
-      width: 72px; height: 72px;
+    .pending-icon {
+      width: 80px; height: 80px;
       border-radius: 50%;
-      background: rgba(67,160,71,0.15);
-      border: 3px solid #43A047;
+      background: rgba(201,168,76,0.12);
+      border: 3px solid var(--gold);
       display: flex; align-items: center; justify-content: center;
-      font-size: 2rem;
-      animation: pop 0.4s ease;
+      font-size: 2.2rem;
+      margin: 0 auto 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+      50%      { box-shadow: 0 0 0 12px rgba(201,168,76,0); }
+    }
+    .pending-title {
+      font-size: 1.5rem; font-weight: 700;
+      color: var(--gold); margin-bottom: 8px;
+    }
+    .pending-sub {
+      color: var(--muted); font-size: 0.95rem; margin-bottom: 28px;
+      max-width: 420px; margin-left: auto; margin-right: auto;
+    }
+    .pending-info {
+      background: #1a1a1a; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 22px;
+      text-align: left; margin-bottom: 24px;
+    }
+    .pending-info table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .pending-info tr { border-bottom: 1px solid var(--border); }
+    .pending-info tr:last-child { border-bottom: none; }
+    .pending-info td { padding: 9px 6px; }
+    .pending-info td:first-child { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; width: 40%; }
+    .pending-info td:last-child { font-weight: 600; }
+
+    .polling-status {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; color: var(--muted); font-size: 0.85rem; margin-bottom: 20px;
+    }
+    .polling-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold); animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ── Approved / QR state ── */
+    .success-badge {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; margin-bottom: 28px; text-align: center;
+    }
+    .success-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: rgba(67,160,71,0.15); border: 3px solid #43A047;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; animation: pop 0.4s ease;
     }
     @keyframes pop {
       0%  { transform: scale(0.5); opacity: 0; }
       80% { transform: scale(1.08); }
-      100%{ transform: scale(1);   opacity: 1; }
+      100%{ transform: scale(1); opacity: 1; }
     }
-    .success-badge h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #81C784;
-      margin: 0;
-    }
-    .success-badge p {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin: 0;
-    }
+    .success-badge h2 { font-size: 1.5rem; font-weight: 700; color: #81C784; margin: 0; }
+    .success-badge p  { color: var(--muted); font-size: 0.9rem; margin: 0; }
 
-    /* Detail table */
-    .detail-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.93rem;
-      margin-bottom: 28px;
-    }
+    .detail-table { width: 100%; border-collapse: collapse; font-size: 0.93rem; margin-bottom: 28px; }
     .detail-table tr { border-bottom: 1px solid var(--border); }
     .detail-table tr:last-child { border-bottom: none; }
     .detail-table td { padding: 10px 8px; }
-    .detail-table td:first-child {
-      color: var(--muted);
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      width: 38%;
-    }
+    .detail-table td:first-child { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; width: 38%; }
     .detail-table td:last-child { font-weight: 600; }
 
-    /* QR section */
     .qr-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      background: #1a1a1a;
-      border: 1px solid var(--border);
-      border-top: 3px solid var(--gold);
-      border-radius: var(--radius);
-      padding: 28px 20px;
-      margin-bottom: 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      background: #1a1a1a; border: 1px solid var(--border);
+      border-top: 3px solid var(--gold); border-radius: var(--radius);
+      padding: 28px 20px; margin-bottom: 24px;
     }
-    .qr-label {
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--gold);
-    }
+    .qr-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); }
     .qr-img-wrap {
-      background: #fff;
-      padding: 14px;
-      border-radius: 12px;
+      background: #fff; padding: 14px; border-radius: 12px;
       box-shadow: 0 0 24px rgba(201,168,76,0.25);
     }
-    .qr-img-wrap img {
-      display: block;
-      width: 220px; height: 220px;
-    }
-    .qr-note {
-      font-size: 0.82rem;
-      color: var(--muted);
-      text-align: center;
-      max-width: 320px;
-    }
+    .qr-img-wrap img { display: block; width: 220px; height: 220px; }
+    .qr-note { font-size: 0.82rem; color: var(--muted); text-align: center; max-width: 320px; }
 
-    /* Expiry badge */
     .expiry-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(224,123,32,0.12);
-      border: 1px solid var(--orange);
-      border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--orange);
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(224,123,32,0.12); border: 1px solid var(--orange);
+      border-radius: 20px; padding: 6px 16px; font-size: 0.85rem;
+      font-weight: 600; color: var(--orange);
     }
 
-    /* Countdown */
-    .countdown-wrap {
-      text-align: center;
-    }
-    .countdown-label {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-    .countdown-grid {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
+    .countdown-wrap { text-align: center; }
+    .countdown-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 10px; }
+    .countdown-grid { display: flex; gap: 10px; justify-content: center; }
     .countdown-cell {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #1a1a1a;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      min-width: 56px;
+      display: flex; flex-direction: column; align-items: center;
+      background: #1a1a1a; border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; min-width: 56px;
     }
-    .countdown-cell .num {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--gold);
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-    .countdown-cell .unit {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-    .countdown-expired {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--error);
-      letter-spacing: 0.5px;
-    }
+    .countdown-cell .num { font-size: 1.6rem; font-weight: 700; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
+    .countdown-cell .unit { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-top: 4px; }
+    .countdown-expired { font-size: 1rem; font-weight: 700; color: var(--error); }
 
-    /* Download / Print button */
     .btn-download {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 13px;
-      background: none;
-      border: 2px solid var(--gold);
-      border-radius: var(--radius);
-      color: var(--gold);
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.2s, color 0.2s;
-      margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px; background: none; border: 2px solid var(--gold);
+      border-radius: var(--radius); color: var(--gold); font-size: 0.95rem;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, color 0.2s; margin-bottom: 12px;
     }
     .btn-download:hover { background: var(--gold); color: var(--black); }
-
     .btn-new {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 13px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px;
       background: linear-gradient(90deg, var(--gold), var(--orange));
-      border: none;
-      border-radius: var(--radius);
-      color: var(--black);
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: opacity 0.2s;
+      border: none; border-radius: var(--radius); color: var(--black);
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; transition: opacity 0.2s;
     }
     .btn-new:hover { opacity: 0.88; }
 
     @media print {
-      .site-header, .site-footer, .btn-download, .btn-new { display: none !important; }
+      .site-header, .site-footer, .btn-download, .btn-new, .polling-status { display: none !important; }
       body { background: #fff; color: #000; }
-      .form-card { box-shadow: none; border: 1px solid #ccc; }
-      .qr-section { border-color: #ccc; }
     }
   </style>
 </head>
@@ -227,27 +159,49 @@
 
   <main class="main-content">
     <div class="confirm-wrap">
-      <div class="form-card" id="confirm-card">
 
-        <!-- Loading state -->
-        <div id="loading-state" style="text-align:center;padding:40px;">
-          <div class="spinner" style="margin:0 auto;border-color:rgba(201,168,76,0.3);border-top-color:var(--gold);width:36px;height:36px;"></div>
-          <p style="margin-top:16px;color:var(--muted);">Loading your confirmation…</p>
-        </div>
+      <!-- Loading -->
+      <div id="loading-state" style="text-align:center;padding:60px;">
+        <div class="spinner" style="margin:0 auto;border-color:rgba(201,168,76,0.3);border-top-color:var(--gold);width:36px;height:36px;"></div>
+        <p style="margin-top:16px;color:var(--muted);">Loading…</p>
+      </div>
 
-        <!-- Confirmation content (filled by JS) -->
-        <div id="confirm-content" hidden>
-
-          <div class="success-badge">
-            <div class="success-icon">✓</div>
-            <h2>Parking Registration Confirmed!</h2>
-            <p>Your truck parking record has been saved. Keep this QR pass for verification.</p>
+      <!-- Pending approval -->
+      <div id="pending-state" hidden>
+        <div class="pending-card">
+          <div class="pending-icon">⏳</div>
+          <div class="pending-title">Waiting for Approval</div>
+          <div class="pending-sub">
+            Your truck parking registration has been submitted.<br>
+            The admin will review and approve your registration after confirming payment.
           </div>
 
-          <!-- Driver details -->
+          <div class="pending-info">
+            <table id="pending-table"></table>
+          </div>
+
+          <div class="polling-status">
+            <div class="polling-dot"></div>
+            <span id="polling-msg">Checking approval status…</span>
+          </div>
+
+          <a href="index.html" class="btn-new" style="max-width:320px;margin:0 auto;">
+            Register Another Truck
+          </a>
+        </div>
+      </div>
+
+      <!-- Approved — show QR -->
+      <div id="approved-state" hidden>
+        <div class="form-card">
+          <div class="success-badge">
+            <div class="success-icon">✓</div>
+            <h2>Registration Approved!</h2>
+            <p>Your truck parking has been approved. Show this QR pass at the checkpoint.</p>
+          </div>
+
           <table class="detail-table" id="detail-table"></table>
 
-          <!-- QR code -->
           <div class="qr-section">
             <span class="qr-label">&#9646; Driver QR Pass</span>
             <div class="qr-img-wrap">
@@ -255,8 +209,7 @@
             </div>
             <div class="expiry-badge">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               Expires: <span id="expiry-text">—</span>
             </div>
@@ -272,11 +225,9 @@
             <p class="qr-note">Show this QR code at the parking checkpoint. It will automatically expire after your parking period ends.</p>
           </div>
 
-          <!-- Actions -->
           <button class="btn-download" onclick="window.print()">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
             </svg>
             Print / Save as PDF
           </button>
@@ -286,17 +237,18 @@
             </svg>
             Register Another Truck
           </a>
-
         </div>
+      </div>
 
-        <!-- Error state -->
-        <div id="error-state" hidden style="text-align:center;padding:40px;">
+      <!-- Error -->
+      <div id="error-state" hidden style="text-align:center;padding:40px;">
+        <div class="form-card">
           <p style="font-size:2rem;">⚠️</p>
-          <p style="color:var(--error);font-weight:600;margin-top:8px;">Could not load confirmation data.</p>
+          <p style="color:var(--error);font-weight:600;margin-top:8px;">Could not load registration data.</p>
           <a href="index.html" class="btn-new" style="margin-top:20px;display:inline-flex;">Back to Form</a>
         </div>
-
       </div>
+
     </div>
   </main>
 
@@ -306,52 +258,123 @@
 
   <script>
   (() => {
-    const KEY      = 'dfw_confirm_data';
-    const loading  = document.getElementById('loading-state');
-    const content  = document.getElementById('confirm-content');
-    const errState = document.getElementById('error-state');
+    const KEY = 'dfw_confirm_data';
 
-    // Load data: sessionStorage (fresh submit) → localStorage (refresh)
+    const loadingEl  = document.getElementById('loading-state');
+    const pendingEl  = document.getElementById('pending-state');
+    const approvedEl = document.getElementById('approved-state');
+    const errorEl    = document.getElementById('error-state');
+
+    // Read from sessionStorage (fresh) or localStorage (refresh)
     let data = null;
     try { data = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch {}
     if (!data) { try { data = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {} }
 
-    if (data && data.qrDataURL) {
-      // Persist to localStorage so page refresh still works
-      localStorage.setItem(KEY, JSON.stringify(data));
-      sessionStorage.removeItem(KEY);
-      render(data);
-    } else {
-      loading.hidden  = true;
-      errState.hidden = false;
+    if (!data || !data.token) {
+      loadingEl.hidden = true;
+      errorEl.hidden   = false;
+      return;
     }
 
-    function render(d) {
-      const driver = d.driver;
+    // Persist to localStorage for refresh
+    localStorage.setItem(KEY, JSON.stringify(data));
+    sessionStorage.removeItem(KEY);
 
-      // Driver details table
-      const table = document.getElementById('detail-table');
-      const rows  = [
-        ['Company',       driver.companyName],
-        ['Driver Name',   driver.driverName],
-        ['Truck Number',  driver.truckNumber],
-        ['Email',         driver.driverEmail],
-        ['Start Time',    new Date(driver.startTime).toLocaleString()],
-        ['Parking Duration', driver.durationLabel || `${driver.durationDays || 0}d ${driver.durationHours || 0}h ${driver.durationMins || 0}m`],
-        ['Phone',         driver.phoneNumber]
+    loadingEl.hidden = true;
+
+    // If already approved (e.g. page refresh after approval)
+    if (data.approvalStatus === 'approved' && data.qrDataURL) {
+      showApproved(data);
+      return;
+    }
+
+    // Show pending state and start polling
+    showPending(data.driver);
+    startPolling(data.token);
+
+    // ── PENDING ───────────────────────────────────────────────
+    function showPending(driver) {
+      pendingEl.hidden = false;
+      const tbl = document.getElementById('pending-table');
+      const rows = [
+        ['Company',          driver.companyName],
+        ['Driver Name',      driver.driverName],
+        ['Truck Number',     driver.truckNumber],
+        ['Email',            driver.driverEmail],
+        ['Phone',            driver.phoneNumber],
+        ['Parking Duration', driver.durationLabel || driver.parkingDuration || '—'],
+        ['Start Time',       driver.startTime]
       ];
-      table.innerHTML = rows.map(([label, value]) =>
-        `<tr><td>${esc(label)}</td><td>${esc(String(value))}</td></tr>`
+      tbl.innerHTML = rows.map(([l, v]) =>
+        `<tr><td>${esc(l)}</td><td>${esc(String(v || ''))}</td></tr>`
+      ).join('');
+    }
+
+    // ── POLLING ───────────────────────────────────────────────
+    let pollInterval = null;
+    let pollCount    = 0;
+
+    function startPolling(token) {
+      poll(token); // immediate first check
+      pollInterval = setInterval(() => poll(token), 5000);
+    }
+
+    async function poll(token) {
+      pollCount++;
+      const msgEl = document.getElementById('polling-msg');
+      try {
+        msgEl.textContent = 'Checking approval status…';
+        const res    = await fetch(`/api/confirm/${encodeURIComponent(token)}`);
+        const result = await res.json();
+
+        if (result.approvalStatus === 'approved' && result.qrDataURL) {
+          clearInterval(pollInterval);
+          // Save approved data with QR to localStorage
+          const updated = { ...data, approvalStatus: 'approved', qrDataURL: result.qrDataURL, expiresAt: result.expiresAt, driver: result.driver };
+          localStorage.setItem(KEY, JSON.stringify(updated));
+          pendingEl.hidden = true;
+          showApproved(updated);
+        } else if (result.approvalStatus === 'rejected') {
+          clearInterval(pollInterval);
+          pendingEl.hidden = true;
+          errorEl.hidden   = false;
+          errorEl.querySelector('p:last-of-type').textContent = 'Your registration was not approved. Please contact the admin.';
+        } else {
+          msgEl.textContent = `Waiting for admin approval… (checked ${pollCount} time${pollCount > 1 ? 's' : ''})`;
+        }
+      } catch (err) {
+        msgEl.textContent = 'Connection error — will retry…';
+      }
+    }
+
+    // ── APPROVED ──────────────────────────────────────────────
+    function showApproved(d) {
+      approvedEl.hidden = false;
+
+      // Detail table
+      const driver = d.driver || {};
+      const tbl    = document.getElementById('detail-table');
+      const rows   = [
+        ['Company',          driver.companyName],
+        ['Driver Name',      driver.driverName],
+        ['Truck Number',     driver.truckNumber],
+        ['Email',            driver.driverEmail],
+        ['Phone',            driver.phoneNumber],
+        ['Parking Duration', driver.durationLabel || driver.parkingDuration || '—'],
+        ['Start Time',       driver.startTime]
+      ];
+      tbl.innerHTML = rows.map(([l, v]) =>
+        `<tr><td>${esc(l)}</td><td>${esc(String(v || ''))}</td></tr>`
       ).join('');
 
       // QR image
       document.getElementById('qr-image').src = d.qrDataURL;
 
-      // Expiry display
+      // Expiry
       const expiresAt = new Date(d.expiresAt);
       document.getElementById('expiry-text').textContent = expiresAt.toLocaleString();
 
-      // Countdown timer
+      // Countdown
       const cdDays  = document.getElementById('cd-days');
       const cdHours = document.getElementById('cd-hours');
       const cdMins  = document.getElementById('cd-mins');
@@ -359,7 +382,6 @@
       const grid    = document.getElementById('countdown-grid');
 
       function pad(n) { return String(n).padStart(2, '0'); }
-
       function tick() {
         const diff = expiresAt - Date.now();
         if (diff <= 0) {
@@ -374,13 +396,10 @@
       }
       tick();
       setInterval(tick, 1000);
-
-      loading.hidden = true;
-      content.hidden = false;
     }
 
     function esc(str) {
-      return String(str)
+      return String(str || '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }

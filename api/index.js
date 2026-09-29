@@ -1,8 +1,8 @@
 /* ============================================================
    api/index.js  –  Vercel serverless handler
-   QR codes contain all data encoded as base64 JSON.
-   Verification is purely client-side — no DB, no lookup.
-   Google Sheet is still written to for your records.
+   Approval flow: registrations start as "pending",
+   QR only issued after admin approves.
+   Persistence: Google Apps Script Web App (Sheets).
    ============================================================ */
 'use strict';
 
@@ -19,17 +19,71 @@ function uuidv4() {
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
-const SHEET_URL = process.env.GOOGLE_SHEET_URL || '';
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
-});
+// ── Google Sheet helper ────────────────────────────────────
+async function sheet(payload) {
+  const url = process.env.GOOGLE_SHEET_URL;
+  if (!url) { console.warn('[Sheets] GOOGLE_SHEET_URL not set'); return null; }
+  const res  = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  });
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch { return txt; }
+}
 
-// ── Submit ─────────────────────────────────────────────────
+async function sheetGet(params) {
+  const url = process.env.GOOGLE_SHEET_URL;
+  if (!url) return null;
+  const qs  = new URLSearchParams(params).toString();
+  const res = await fetch(`${url}?${qs}`, { redirect: 'follow' });
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch { return null; }
+}
+
+// ── Admin auth middleware ──────────────────────────────────
+function adminAuth(req, res, next) {
+  const pwd = process.env.ADMIN_PASSWORD;
+  if (!pwd) return res.status(500).json({ error: 'ADMIN_PASSWORD env var not set.' });
+  const auth = req.headers['x-admin-password'] || req.query.p;
+  if (auth !== pwd) return res.status(401).json({ error: 'Unauthorized.' });
+  next();
+}
+
+// ── Build encoded QR data URL for an approved record ──────
+async function buildQR(rec, proto, host) {
+  const record = {
+    t:  rec.token,
+    cn: rec.companyName,
+    dn: rec.driverName,
+    de: rec.driverEmail,
+    tn: rec.truckNumber,
+    ph: rec.phoneNumber,
+    st: Math.floor(new Date(rec.startTimeUTC).getTime() / 1000),
+    ex: Math.floor(new Date(rec.expiresAt).getTime() / 1000),
+    dl: rec.parkingDuration
+  };
+  const encoded   = Buffer.from(JSON.stringify(record)).toString('base64url');
+  const verifyUrl = `${proto}://${host}/verify.html?d=${encoded}`;
+  const qrDataURL = await QRCode.toDataURL(verifyUrl, {
+    errorCorrectionLevel: 'M', margin: 2, width: 300,
+    color: { dark: '#111111', light: '#FFFFFF' }
+  });
+  return { qrDataURL, verifyUrl, encoded };
+}
+
+// ── Health ─────────────────────────────────────────────────
+app.get('/api/health', (_req, res) =>
+  res.json({ status: 'ok', time: new Date().toISOString() })
+);
+
+// ── POST /api/submit ───────────────────────────────────────
 app.post('/api/submit', async (req, res) => {
   try {
     const b = req.body || {};
 
-    // Validate
+    // Validation
     if (!b.companyName  || String(b.companyName).trim().length < 2)
       return res.status(422).json({ success: false, message: 'Company name must be at least 2 characters.' });
     if (!b.driverName   || String(b.driverName).trim().length < 2)
@@ -54,102 +108,189 @@ app.post('/api/submit', async (req, res) => {
       return res.status(422).json({ success: false, message: 'A driver signature is required.' });
 
     // Generate token + expiry
-    const token      = uuidv4();
-    const tzOffset   = Number(b.tzOffset) || 0;
-    const startUTC   = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
-    const expiresAt  = new Date(startUTC.getTime() + totalMins * 60000);
+    const token    = uuidv4();
+    const tzOffset = Number(b.tzOffset) || 0;
+    const startUTC = new Date(new Date(b.startTime).getTime() + tzOffset * 60000);
+    const expiresAt = new Date(startUTC.getTime() + totalMins * 60000);
     const durationLabel = [
       days  > 0 ? `${days}d`  : '',
       hours > 0 ? `${hours}h` : '',
       mins  > 0 ? `${mins}m`  : ''
     ].filter(Boolean).join(' ') || '0m';
 
-    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-    const host  = req.headers.host;
+    const submittedAt = new Date().toISOString();
+    const startTimeCST = new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' });
+    const expiresAtCST = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 
-    // ── Encode minimal record into the QR URL ──────────────
-    // Use unix timestamps (seconds) instead of ISO strings — much shorter
-    // Only include fields needed for verification display
-    const record = {
-      t:  token,                              // token
-      cn: String(b.companyName).trim(),       // companyName
-      dn: String(b.driverName).trim(),        // driverName
-      de: String(b.driverEmail).trim(),       // driverEmail
-      tn: String(b.truckNumber).trim(),       // truckNumber
-      ph: String(b.phoneNumber).trim(),       // phoneNumber
-      st: Math.floor(startUTC.getTime()/1000),// startTime (unix seconds UTC)
-      ex: Math.floor(expiresAt.getTime()/1000),// expiresAt (unix seconds)
-      dl: durationLabel                        // e.g. "1d" or "2d 3h"
-    };
-
-    // Base64url encode (URL-safe)
-    const encoded   = Buffer.from(JSON.stringify(record)).toString('base64url');
-    const verifyUrl = `${proto}://${host}/verify.html?d=${encoded}`;
-
-    // Generate QR code containing the full encoded URL
-    const qrDataURL = await QRCode.toDataURL(verifyUrl, {
-      errorCorrectionLevel: 'M',   // M = smaller QR, still reliable
-      margin: 2,
-      width: 300,
-      color: { dark: '#111111', light: '#FFFFFF' }
-    });
-
-    // Save to Google Sheet — await it so it completes before responding
-    if (process.env.GOOGLE_SHEET_URL) {
-      try {
-        const sheetRes = await fetch(process.env.GOOGLE_SHEET_URL, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            companyName:      String(b.companyName).trim(),
-            driverName:       String(b.driverName).trim(),
-            driverEmail:      String(b.driverEmail).trim(),
-            truckNumber:      String(b.truckNumber).trim(),
-            phoneNumber:      String(b.phoneNumber).trim(),
-            startTime:        new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
-            parkingDuration:  durationLabel,
-            expiresAt:        new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
-            verifyUrl
-          }),
-          redirect: 'follow'
-        });
-        const sheetText = await sheetRes.text();
-        console.log('[Sheets] saved:', sheetText.substring(0, 100));
-      } catch (sheetErr) {
-        console.warn('[Sheets] Error:', sheetErr.message);
-        // Don't fail the whole request if sheet is down
-      }
+    // Save to Google Sheet as PENDING (no QR yet)
+    try {
+      await sheet({
+        action:          'save',
+        token,
+        submittedAt,
+        companyName:     String(b.companyName).trim(),
+        driverName:      String(b.driverName).trim(),
+        driverEmail:     String(b.driverEmail).trim(),
+        truckNumber:     String(b.truckNumber).trim(),
+        phoneNumber:     String(b.phoneNumber).trim(),
+        startTime:       startTimeCST,
+        startTimeUTC:    startUTC.toISOString(),
+        parkingDuration: durationLabel,
+        expiresAt:       expiresAtCST,
+        expiresAtUTC:    expiresAt.toISOString(),
+        approvalStatus:  'pending'
+      });
+    } catch (sheetErr) {
+      console.warn('[Sheets] Error:', sheetErr.message);
     }
 
+    // Return pending — NO QR code yet
     return res.json({
-      success:   true,
-      message:   'Parking registration submitted successfully.',
+      success:        true,
+      approvalStatus: 'pending',
       token,
-      expiresAt: expiresAt.toISOString(),
-      qrDataURL,
+      message:        'Registration submitted. Waiting for admin approval.',
       driver: {
-        companyName:   record.cn,
-        driverName:    record.dn,
-        truckNumber:   record.tn,
-        driverEmail:   record.de,
-        startTime:     record.st,
+        companyName:   String(b.companyName).trim(),
+        driverName:    String(b.driverName).trim(),
+        truckNumber:   String(b.truckNumber).trim(),
+        driverEmail:   String(b.driverEmail).trim(),
+        startTime:     startTimeCST,
         durationDays:  days,
         durationHours: hours,
         durationMins:  mins,
         durationLabel,
-        phoneNumber:   record.ph
+        phoneNumber:   String(b.phoneNumber).trim()
       }
     });
 
   } catch (e) {
-    console.error('[/api/submit crash]', e.stack || e.message);
+    console.error('[/api/submit]', e.stack || e.message);
     return res.status(500).json({ success: false, message: 'Server error: ' + e.message });
   }
 });
 
-// ── Verify (kept for any legacy token= URLs) ───────────────
-app.get('/api/verify/:token', (_req, res) => {
-  res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
+// ── GET /api/confirm/:token ────────────────────────────────
+// Driver polls this after submission to check approval status.
+// Returns QR code only if approved.
+app.get('/api/confirm/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const data = await sheetGet({ action: 'getByToken', token });
+
+    if (!data || !data.token)
+      return res.status(404).json({ found: false, message: 'Registration not found.' });
+
+    if (data.approvalStatus !== 'approved') {
+      return res.json({
+        found:          true,
+        approvalStatus: data.approvalStatus || 'pending',
+        token:          data.token,
+        driver: {
+          companyName:   data.companyName,
+          driverName:    data.driverName,
+          truckNumber:   data.truckNumber,
+          driverEmail:   data.driverEmail,
+          startTime:     data.startTime,
+          durationLabel: data.parkingDuration,
+          phoneNumber:   data.phoneNumber
+        }
+      });
+    }
+
+    // Approved — generate and return QR code
+    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const host  = req.headers.host;
+    const { qrDataURL } = await buildQR(data, proto, host);
+
+    return res.json({
+      found:          true,
+      approvalStatus: 'approved',
+      token:          data.token,
+      expiresAt:      data.expiresAtUTC || data.expiresAt,
+      qrDataURL,
+      driver: {
+        companyName:   data.companyName,
+        driverName:    data.driverName,
+        truckNumber:   data.truckNumber,
+        driverEmail:   data.driverEmail,
+        startTime:     data.startTime,
+        durationLabel: data.parkingDuration,
+        phoneNumber:   data.phoneNumber
+      }
+    });
+
+  } catch (e) {
+    console.error('[/api/confirm]', e.stack || e.message);
+    return res.status(500).json({ found: false, message: 'Server error: ' + e.message });
+  }
 });
+
+// ── GET /api/admin/registrations ───────────────────────────
+app.get('/api/admin/registrations', adminAuth, async (req, res) => {
+  try {
+    const data = await sheetGet({ action: 'list' });
+    if (!data) return res.json({ registrations: [] });
+    return res.json({ registrations: Array.isArray(data) ? data : (data.registrations || []) });
+  } catch (e) {
+    console.error('[/api/admin/registrations]', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ── POST /api/admin/approve/:token ─────────────────────────
+app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
+  try {
+    const { token } = req.params;
+    const result = await sheet({ action: 'approve', token });
+
+    if (!result || result.success === false)
+      return res.status(404).json({ success: false, message: 'Token not found.' });
+
+    // Generate and return QR code for this newly approved record
+    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const host  = req.headers.host;
+
+    // Fetch the full record to build QR
+    const rec = await sheetGet({ action: 'getByToken', token });
+    if (rec && rec.token) {
+      const { qrDataURL, verifyUrl } = await buildQR(rec, proto, host);
+      // Optionally update the sheet with the verifyUrl
+      sheet({ action: 'setVerifyUrl', token, verifyUrl }).catch(() => {});
+      return res.json({ success: true, qrDataURL, verifyUrl, token });
+    }
+
+    return res.json({ success: true, token });
+  } catch (e) {
+    console.error('[/api/admin/approve]', e.message);
+    return res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ── POST /api/admin/reject/:token ──────────────────────────
+app.post('/api/admin/reject/:token', adminAuth, async (req, res) => {
+  try {
+    const { token } = req.params;
+    await sheet({ action: 'reject', token });
+    return res.json({ success: true, token });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ── GET /api/admin/analytics ───────────────────────────────
+app.get('/api/admin/analytics', adminAuth, async (req, res) => {
+  try {
+    const data = await sheetGet({ action: 'analytics' });
+    return res.json(data || { today: 0, thisWeek: 0, thisMonth: 0, total: 0 });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Legacy verify stub ─────────────────────────────────────
+app.get('/api/verify/:token', (_req, res) =>
+  res.status(404).json({ valid: false, status: 'not_found' })
+);
 
 module.exports = app;
