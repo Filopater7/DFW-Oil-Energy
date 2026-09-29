@@ -210,27 +210,57 @@
 
   <script>
   (() => {
-    const params = new URLSearchParams(window.location.search);
-    const token  = params.get('token');
     const loadEl = document.getElementById('verify-loading');
     const resEl  = document.getElementById('verify-result');
+    const params = new URLSearchParams(window.location.search);
 
-    if (!token) {
-      showError('No token provided. Please scan a valid QR code.');
+    // ── New QR format: ?d=base64url encoded JSON ──────────────
+    const encoded = params.get('d');
+    if (encoded) {
+      try {
+        // Decode base64url → JSON
+        const json = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+        const r    = JSON.parse(json);
+
+        // Map short keys back to full names
+        const d = {
+          token:         r.t,
+          companyName:   r.cn,
+          driverName:    r.dn,
+          driverEmail:   r.de,
+          truckNumber:   r.tn,
+          phoneNumber:   r.ph,
+          startTime:     r.st,
+          startTimeUTC:  r.su,
+          expiresAt:     r.ex,
+          durationLabel: r.dl,
+          durationDays:  r.dd,
+          durationHours: r.dh,
+          durationMins:  r.dm,
+          submittedAt:   r.sa
+        };
+
+        // Determine status from timestamps
+        const now        = new Date();
+        const expired    = now > new Date(d.expiresAt);
+        const notStarted = now < new Date(d.startTimeUTC || d.startTime);
+        d.status = notStarted ? 'not_started' : expired ? 'expired' : 'active';
+
+        loadEl.hidden = true;
+        resEl.hidden  = false;
+
+        if (d.status === 'active')       renderActive(d);
+        else if (d.status === 'expired') renderExpired(d);
+        else if (d.status === 'not_started') renderNotStarted(d);
+
+      } catch (err) {
+        showError('Invalid QR code. Could not decode pass data.');
+      }
       return;
     }
 
-    fetch(`/api/verify/${encodeURIComponent(token)}`)
-      .then(r => r.json())
-      .then(data => {
-        loadEl.hidden = true;
-        resEl.hidden  = false;
-        if (data.status === 'active')       renderActive(data);
-        else if (data.status === 'expired')  renderExpired(data);
-        else if (data.status === 'not_started') renderNotStarted(data);
-        else                                 renderNotFound();
-      })
-      .catch(() => showError('Network error. Could not verify the pass.'));
+    // ── Legacy format: ?token= (no longer issued, show not found) ──
+    showError('Invalid or outdated QR code. Please generate a new one.');
 
     // ── ACTIVE ────────────────────────────────────────────────
     function renderActive(d) {
@@ -251,12 +281,12 @@
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
               <div class="info-item"><div class="info-label">Start Time</div><div class="info-value">${new Date(d.startTime).toLocaleString()}</div></div>
-              <div class="info-item"><div class="info-label">Parking Duration</div><div class="info-value">${d.durationLabel || (d.numberOfDays + ' day(s)')}</div></div>
+              <div class="info-item"><div class="info-label">Parking Duration</div><div class="info-value">${esc(d.durationLabel)}</div></div>
             </div>
           </div>
           <div class="expiry-row">
             <span class="exp-label">Pass expires</span>
-            <span class="exp-value" id="expiry-display">${expiresAt.toLocaleString()}</span>
+            <span class="exp-value">${expiresAt.toLocaleString()}</span>
           </div>
           <div class="verify-countdown" id="countdown-row">
             <div class="vc-cell"><span class="num" id="vd">--</span><span class="unit">Days</span></div>
@@ -268,7 +298,6 @@
         <a href="index.html" class="btn-back">← Back to Parking Registration</a>
       `;
 
-      // Start countdown
       function pad(n) { return String(n).padStart(2,'0'); }
       function tick() {
         const diff = expiresAt - Date.now();
@@ -278,18 +307,18 @@
           document.querySelector('.status-card').className = 'status-card expired';
           return;
         }
-        const s = Math.floor(diff/1000);
-        document.getElementById('vd').textContent = pad(Math.floor(s/86400));
-        document.getElementById('vh').textContent = pad(Math.floor((s%86400)/3600));
-        document.getElementById('vm').textContent = pad(Math.floor((s%3600)/60));
-        document.getElementById('vs').textContent = pad(s%60);
+        const s = Math.floor(diff / 1000);
+        document.getElementById('vd').textContent = pad(Math.floor(s / 86400));
+        document.getElementById('vh').textContent = pad(Math.floor((s % 86400) / 3600));
+        document.getElementById('vm').textContent = pad(Math.floor((s % 3600) / 60));
+        document.getElementById('vs').textContent = pad(s % 60);
       }
-      tick(); setInterval(tick, 1000);
+      tick();
+      setInterval(tick, 1000);
     }
 
     // ── EXPIRED ───────────────────────────────────────────────
     function renderExpired(d) {
-      const expiresAt = new Date(d.expiresAt);
       resEl.innerHTML = `
         <div class="status-card expired">
           <div class="status-header">
@@ -305,12 +334,14 @@
               <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
-              <div class="info-item full"><div class="info-label">Parking was</div><div class="info-value">${d.durationLabel || (d.numberOfDays + ' day(s)')} from ${new Date(d.startTime).toLocaleString()}</div></div>
+              <div class="info-item full"><div class="info-label">Parking was</div>
+                <div class="info-value">${esc(d.durationLabel)} from ${new Date(d.startTime).toLocaleString()}</div>
+              </div>
             </div>
           </div>
           <div class="expiry-row">
             <span class="exp-label">Expired on</span>
-            <span class="exp-value">${expiresAt.toLocaleString()}</span>
+            <span class="exp-value">${new Date(d.expiresAt).toLocaleString()}</span>
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
@@ -337,12 +368,14 @@
               <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
-              <div class="info-item full"><div class="info-label">Parking Starts</div><div class="info-value" style="color:#64B5F6;">${new Date(d.startTime).toLocaleString()}</div></div>
+              <div class="info-item full"><div class="info-label">Parking Starts</div>
+                <div class="info-value" style="color:#64B5F6;">${new Date(d.startTime).toLocaleString()}</div>
+              </div>
             </div>
           </div>
           <div class="expiry-row">
             <span class="exp-label">Parking duration</span>
-            <span class="exp-value" style="color:#64B5F6;">${d.durationLabel || (d.numberOfDays + ' day(s)')}</span>
+            <span class="exp-value" style="color:#64B5F6;">${esc(d.durationLabel)}</span>
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
@@ -352,38 +385,25 @@
       `;
     }
 
-    // ── NOT FOUND ─────────────────────────────────────────────
-    function renderNotFound() {
+    function showError(msg) {
+      loadEl.hidden = true;
+      resEl.hidden  = false;
       resEl.innerHTML = `
         <div class="status-card not-found">
           <div class="status-header">
             <div class="status-icon">?</div>
             <div>
               <div class="status-title">PASS NOT FOUND</div>
-              <div class="status-sub">This QR code is not registered in our system</div>
+              <div class="status-sub">${esc(msg)}</div>
             </div>
           </div>
         </div>
-        <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
-          The QR code may be invalid, tampered with, or from an older system.
-        </p>
-        <a href="index.html" class="btn-back">← Back to Parking Registration</a>
+        <a href="index.html" class="btn-back" style="margin-top:12px;">← Back to Parking Registration</a>
       `;
     }
 
-    function showError(msg) {
-      loadEl.hidden = true;
-      resEl.hidden  = false;
-      resEl.innerHTML = `
-        <div style="text-align:center;padding:40px;">
-          <p style="font-size:2rem;">⚠️</p>
-          <p style="color:var(--error);font-weight:600;margin-top:8px;">${esc(msg)}</p>
-          <a href="index.html" class="btn-back" style="margin-top:20px;display:inline-flex;">← Back</a>
-        </div>`;
-    }
-
     function esc(str) {
-      return String(str)
+      return String(str || '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }

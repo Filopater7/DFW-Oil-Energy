@@ -1,6 +1,8 @@
 /* ============================================================
    api/index.js  –  Vercel serverless handler
-   Persistence: Google Apps Script Web App (no in-memory store)
+   QR codes contain all data encoded as base64 JSON.
+   Verification is purely client-side — no DB, no lookup.
+   Google Sheet is still written to for your records.
    ============================================================ */
 'use strict';
 
@@ -17,30 +19,7 @@ function uuidv4() {
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
-// ── Google Apps Script endpoint ────────────────────────────
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJ4v990ZHPfBPQkt7LGfgaDHJDovsHiBWZwMDEWCAXR6bFQKsEKu2Ml9cuvoqTYFNm/exec';
-
-// POST data to sheet
-async function saveToSheet(payload) {
-  const res = await fetch(SHEET_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(payload),
-    redirect: 'follow'
-  });
-  const text = await res.text();
-  console.log('[Sheets] save response:', text);
-  return text;
-}
-
-// GET a record by token from sheet
-async function getFromSheet(token) {
-  const url = `${SHEET_URL}?action=getByToken&token=${encodeURIComponent(token)}`;
-  const res  = await fetch(url, { redirect: 'follow' });
-  const text = await res.text();
-  console.log('[Sheets] get response:', text.substring(0, 200));
-  try { return JSON.parse(text); } catch { return null; }
-}
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -87,34 +66,60 @@ app.post('/api/submit', async (req, res) => {
       mins  > 0 ? `${mins}m`  : ''
     ].filter(Boolean).join(' ') || '0m';
 
-    const proto     = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-    const host      = req.headers.host;
-    const verifyUrl = `${proto}://${host}/verify.html?token=${token}`;
+    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const host  = req.headers.host;
 
+    // ── Encode all record data into the QR URL ──────────────
+    // No database lookup needed on verify — data lives in the QR itself
+    const record = {
+      t:  token,                              // token (for uniqueness)
+      cn: String(b.companyName).trim(),       // companyName
+      dn: String(b.driverName).trim(),        // driverName
+      de: String(b.driverEmail).trim(),       // driverEmail
+      tn: String(b.truckNumber).trim(),       // truckNumber
+      ph: String(b.phoneNumber).trim(),       // phoneNumber
+      st: b.startTime,                        // startTime (local)
+      su: startUTC.toISOString(),             // startTimeUTC
+      ex: expiresAt.toISOString(),            // expiresAt
+      dl: durationLabel,                      // durationLabel
+      dd: days, dh: hours, dm: mins,          // duration parts
+      sa: new Date().toISOString()            // submittedAt
+    };
+
+    // Base64url encode (URL-safe)
+    const encoded   = Buffer.from(JSON.stringify(record)).toString('base64url');
+    const verifyUrl = `${proto}://${host}/verify.html?d=${encoded}`;
+
+    // Generate QR code containing the full encoded URL
     const qrDataURL = await QRCode.toDataURL(verifyUrl, {
-      errorCorrectionLevel: 'H', margin: 2, width: 300,
+      errorCorrectionLevel: 'M',   // M = smaller QR, still reliable
+      margin: 2,
+      width: 300,
       color: { dark: '#111111', light: '#FFFFFF' }
     });
 
-    // Save to Google Sheet (primary persistent store)
-    await saveToSheet({
-      action:          'save',
-      token,
-      submittedAt:     new Date().toISOString(),
-      companyName:     String(b.companyName).trim(),
-      driverName:      String(b.driverName).trim(),
-      driverEmail:     String(b.driverEmail).trim(),
-      truckNumber:     String(b.truckNumber).trim(),
-      phoneNumber:     String(b.phoneNumber).trim(),
-      startTime:       b.startTime,
-      startTimeUTC:    startUTC.toISOString(),
-      parkingDuration: durationLabel,
-      durationDays:    days,
-      durationHours:   hours,
-      durationMins:    mins,
-      expiresAt:       expiresAt.toISOString(),
-      verifyUrl
-    });
+    // Save to Google Sheet for records (fire and forget — don't await)
+    fetch(SHEET_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token,
+        submittedAt:     record.sa,
+        companyName:     record.cn,
+        driverName:      record.dn,
+        driverEmail:     record.de,
+        truckNumber:     record.tn,
+        phoneNumber:     record.ph,
+        startTime:       record.st,
+        parkingDuration: record.dl,
+        expiresAt:       record.ex,
+        verifyUrl
+      }),
+      redirect: 'follow'
+    })
+    .then(r => r.text())
+    .then(t => console.log('[Sheets]', t.substring(0, 100)))
+    .catch(e => console.warn('[Sheets] Error:', e.message));
 
     return res.json({
       success:   true,
@@ -123,16 +128,16 @@ app.post('/api/submit', async (req, res) => {
       expiresAt: expiresAt.toISOString(),
       qrDataURL,
       driver: {
-        companyName:   String(b.companyName).trim(),
-        driverName:    String(b.driverName).trim(),
-        truckNumber:   String(b.truckNumber).trim(),
-        driverEmail:   String(b.driverEmail).trim(),
-        startTime:     b.startTime,
+        companyName:   record.cn,
+        driverName:    record.dn,
+        truckNumber:   record.tn,
+        driverEmail:   record.de,
+        startTime:     record.st,
         durationDays:  days,
         durationHours: hours,
         durationMins:  mins,
         durationLabel,
-        phoneNumber:   String(b.phoneNumber).trim()
+        phoneNumber:   record.ph
       }
     });
 
@@ -142,41 +147,9 @@ app.post('/api/submit', async (req, res) => {
   }
 });
 
-// ── Verify ─────────────────────────────────────────────────
-app.get('/api/verify/:token', async (req, res) => {
-  try {
-    const rec = await getFromSheet(req.params.token);
-
-    if (!rec || !rec.token)
-      return res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
-
-    const now        = new Date();
-    const expired    = now > new Date(rec.expiresAt);
-    const notStarted = now < new Date(rec.startTimeUTC || rec.startTime);
-    const status     = notStarted ? 'not_started' : expired ? 'expired' : 'active';
-
-    return res.json({
-      valid:         status === 'active',
-      status,
-      token:         rec.token,
-      expiresAt:     rec.expiresAt,
-      submittedAt:   rec.submittedAt,
-      companyName:   rec.companyName,
-      driverName:    rec.driverName,
-      truckNumber:   rec.truckNumber,
-      driverEmail:   rec.driverEmail,
-      startTime:     rec.startTime,
-      durationLabel: rec.parkingDuration || rec.durationLabel,
-      durationDays:  rec.durationDays,
-      durationHours: rec.durationHours,
-      durationMins:  rec.durationMins,
-      phoneNumber:   rec.phoneNumber
-    });
-
-  } catch (e) {
-    console.error('[/api/verify crash]', e.stack || e.message);
-    return res.status(500).json({ valid: false, message: 'Server error: ' + e.message });
-  }
+// ── Verify (kept for any legacy token= URLs) ───────────────
+app.get('/api/verify/:token', (_req, res) => {
+  res.status(404).json({ valid: false, status: 'not_found', message: 'QR code not found.' });
 });
 
 module.exports = app;
