@@ -94,29 +94,33 @@ app.post('/api/submit', async (req, res) => {
       color: { dark: '#111111', light: '#FFFFFF' }
     });
 
-    // Save to Google Sheet (fire and forget)
+    // Save to Google Sheet — await it so it completes before responding
     if (process.env.GOOGLE_SHEET_URL) {
-      fetch(process.env.GOOGLE_SHEET_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          companyName:      String(b.companyName).trim(),
-          driverName:       String(b.driverName).trim(),
-          driverEmail:      String(b.driverEmail).trim(),
-          truckNumber:      String(b.truckNumber).trim(),
-          phoneNumber:      String(b.phoneNumber).trim(),
-          startTime:        new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
-          parkingDuration:  durationLabel,
-          expiresAt:        new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
-          verifyUrl,
-          licenseImage:     String(b.licenseImageData || ''),
-          signatureImage:   String(b.signatureData || '')
-        }),
-        redirect: 'follow'
-      })
-      .then(r => r.text())
-      .then(t => console.log('[Sheets]', t.substring(0, 100)))
-      .catch(e => console.warn('[Sheets] Error:', e.message));
+      try {
+        const sheetRes = await fetch(process.env.GOOGLE_SHEET_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyName:      String(b.companyName).trim(),
+            driverName:       String(b.driverName).trim(),
+            driverEmail:      String(b.driverEmail).trim(),
+            truckNumber:      String(b.truckNumber).trim(),
+            phoneNumber:      String(b.phoneNumber).trim(),
+            startTime:        new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
+            parkingDuration:  durationLabel,
+            expiresAt:        new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
+            verifyUrl,
+            licenseImage:     String(b.licenseImageData || ''),
+            signatureImage:   String(b.signatureData || '')
+          }),
+          redirect: 'follow'
+        });
+        const sheetText = await sheetRes.text();
+        console.log('[Sheets] saved:', sheetText.substring(0, 100));
+      } catch (sheetErr) {
+        console.warn('[Sheets] Error:', sheetErr.message);
+        // Don't fail the whole request if sheet is down
+      }
     }
 
     return res.json({
