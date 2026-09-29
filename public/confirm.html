@@ -288,6 +288,10 @@
       return;
     }
 
+    // ── POLLING state vars — must be declared before showPending/startPolling ──
+    let pollInterval = null;
+    let pollCount    = 0;
+
     // Show pending state and start polling
     showPending(data.driver);
     startPolling(data.token);
@@ -311,8 +315,6 @@
     }
 
     // ── POLLING ───────────────────────────────────────────────
-    let pollInterval = null;
-    let pollCount    = 0;
 
     function startPolling(token) {
       poll(token); // immediate first check
