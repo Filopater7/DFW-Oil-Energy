@@ -223,6 +223,7 @@
         const r    = JSON.parse(json);
 
         // Map short keys back to full names
+        // st and ex are unix seconds — convert to ms for Date
         const d = {
           token:         r.t,
           companyName:   r.cn,
@@ -230,20 +231,16 @@
           driverEmail:   r.de,
           truckNumber:   r.tn,
           phoneNumber:   r.ph,
-          startTime:     r.st,
-          startTimeUTC:  r.su,
-          expiresAt:     r.ex,
-          durationLabel: r.dl,
-          durationDays:  r.dd,
-          durationHours: r.dh,
-          durationMins:  r.dm,
-          submittedAt:   r.sa
+          startTime:     new Date(r.st * 1000).toLocaleString(),
+          startTimeUTC:  new Date(r.st * 1000),
+          expiresAt:     new Date(r.ex * 1000),
+          durationLabel: r.dl
         };
 
         // Determine status from timestamps
         const now        = new Date();
-        const expired    = now > new Date(d.expiresAt);
-        const notStarted = now < new Date(d.startTimeUTC || d.startTime);
+        const expired    = now > d.expiresAt;
+        const notStarted = now < d.startTimeUTC;
         d.status = notStarted ? 'not_started' : expired ? 'expired' : 'active';
 
         loadEl.hidden = true;
@@ -264,7 +261,7 @@
 
     // ── ACTIVE ────────────────────────────────────────────────
     function renderActive(d) {
-      const expiresAt = new Date(d.expiresAt);
+      const expiresAt = d.expiresAt; // already a Date object
       resEl.innerHTML = `
         <div class="status-card active">
           <div class="status-header">
@@ -280,13 +277,13 @@
               <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
-              <div class="info-item"><div class="info-label">Start Time</div><div class="info-value">${new Date(d.startTime).toLocaleString()}</div></div>
+              <div class="info-item"><div class="info-label">Start Time</div><div class="info-value">${esc(d.startTime)}</div></div>
               <div class="info-item"><div class="info-label">Parking Duration</div><div class="info-value">${esc(d.durationLabel)}</div></div>
             </div>
           </div>
           <div class="expiry-row">
             <span class="exp-label">Pass expires</span>
-            <span class="exp-value">${expiresAt.toLocaleString()}</span>
+            <span class="exp-value">${d.expiresAt.toLocaleString()}</span>
           </div>
           <div class="verify-countdown" id="countdown-row">
             <div class="vc-cell"><span class="num" id="vd">--</span><span class="unit">Days</span></div>
@@ -300,7 +297,7 @@
 
       function pad(n) { return String(n).padStart(2,'0'); }
       function tick() {
-        const diff = expiresAt - Date.now();
+        const diff = d.expiresAt - Date.now();
         if (diff <= 0) {
           document.getElementById('countdown-row').innerHTML =
             '<p style="color:var(--error);font-weight:700;padding:8px;">Pass just expired</p>';
@@ -317,7 +314,6 @@
       setInterval(tick, 1000);
     }
 
-    // ── EXPIRED ───────────────────────────────────────────────
     function renderExpired(d) {
       resEl.innerHTML = `
         <div class="status-card expired">
@@ -335,13 +331,13 @@
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
               <div class="info-item full"><div class="info-label">Parking was</div>
-                <div class="info-value">${esc(d.durationLabel)} from ${new Date(d.startTime).toLocaleString()}</div>
+                <div class="info-value">${esc(d.durationLabel)} from ${esc(d.startTime)}</div>
               </div>
             </div>
           </div>
           <div class="expiry-row">
             <span class="exp-label">Expired on</span>
-            <span class="exp-value">${new Date(d.expiresAt).toLocaleString()}</span>
+            <span class="exp-value">${d.expiresAt.toLocaleString()}</span>
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
@@ -369,7 +365,7 @@
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
               <div class="info-item full"><div class="info-label">Parking Starts</div>
-                <div class="info-value" style="color:#64B5F6;">${new Date(d.startTime).toLocaleString()}</div>
+                <div class="info-value" style="color:#64B5F6;">${esc(d.startTime)}</div>
               </div>
             </div>
           </div>

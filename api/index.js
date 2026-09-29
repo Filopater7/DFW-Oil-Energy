@@ -19,7 +19,7 @@ function uuidv4() {
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJ4v990ZHPfBPQkt7LGfgaDHJDovsHiBWZwMDEWCAXR6bFQKsEKu2Ml9cuvoqTYFNm/exec';
+const SHEET_URL = process.env.GOOGLE_SHEET_URL || '';
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -69,21 +69,19 @@ app.post('/api/submit', async (req, res) => {
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host  = req.headers.host;
 
-    // ── Encode all record data into the QR URL ──────────────
-    // No database lookup needed on verify — data lives in the QR itself
+    // ── Encode minimal record into the QR URL ──────────────
+    // Use unix timestamps (seconds) instead of ISO strings — much shorter
+    // Only include fields needed for verification display
     const record = {
-      t:  token,                              // token (for uniqueness)
+      t:  token,                              // token
       cn: String(b.companyName).trim(),       // companyName
       dn: String(b.driverName).trim(),        // driverName
       de: String(b.driverEmail).trim(),       // driverEmail
       tn: String(b.truckNumber).trim(),       // truckNumber
       ph: String(b.phoneNumber).trim(),       // phoneNumber
-      st: b.startTime,                        // startTime (local)
-      su: startUTC.toISOString(),             // startTimeUTC
-      ex: expiresAt.toISOString(),            // expiresAt
-      dl: durationLabel,                      // durationLabel
-      dd: days, dh: hours, dm: mins,          // duration parts
-      sa: new Date().toISOString()            // submittedAt
+      st: Math.floor(startUTC.getTime()/1000),// startTime (unix seconds UTC)
+      ex: Math.floor(expiresAt.getTime()/1000),// expiresAt (unix seconds)
+      dl: durationLabel                        // e.g. "1d" or "2d 3h"
     };
 
     // Base64url encode (URL-safe)
