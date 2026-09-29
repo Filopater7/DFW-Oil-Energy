@@ -109,9 +109,7 @@ app.post('/api/submit', async (req, res) => {
             startTime:        new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
             parkingDuration:  durationLabel,
             expiresAt:        new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' }),
-            verifyUrl,
-            licenseImage:     String(b.licenseImageData || ''),
-            signatureImage:   String(b.signatureData || '')
+            verifyUrl
           }),
           redirect: 'follow'
         });
