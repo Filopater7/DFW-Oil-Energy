@@ -426,22 +426,29 @@
     // ── APPROVE ───────────────────────────────────────────────
     async function approveToken(token) {
       const rec = allRegs.find(r => r.token === token);
+      const btn = document.querySelector(`.btn-approve[data-token="${token}"]`);
+      if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
       try {
         const res  = await fetch(`/api/admin/approve/${encodeURIComponent(token)}`, {
           method: 'POST',
           headers: { 'x-admin-password': adminPwd, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ record: rec || {} })  // send record so server skips extra Sheet fetch
+          body: JSON.stringify({ record: rec || {} })
         });
         const data = await res.json();
+        console.log('[approve response]', data);
         if (data.success) {
-          toast('✓ Registration approved!');
+          toast('✓ Approved! Driver will see QR within 5 seconds.');
           if (rec) rec.approvalStatus = 'approved';
           renderTable();
           loadAnalytics();
         } else {
           toast('Error: ' + (data.message || 'Could not approve.'));
+          if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
         }
-      } catch (e) { toast('Error: ' + e.message); }
+      } catch (e) {
+        toast('Network error: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+      }
     }
 
     // ── REJECT ────────────────────────────────────────────────

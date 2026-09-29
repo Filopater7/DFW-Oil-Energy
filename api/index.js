@@ -268,45 +268,59 @@ app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
   try {
     const { token } = req.params;
     const body  = req.body || {};
-
-    // Run sheet approve in parallel with QR generation if we have the record data
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host  = req.headers.host;
 
-    // Build QR from data sent by admin page (avoids extra Sheet round-trip)
     let qrDataURL = null, verifyUrl = null;
-    if (body.record) {
-      const rec = body.record;
-      const built = await buildQR(rec, proto, host);
-      qrDataURL  = built.qrDataURL;
-      verifyUrl  = built.verifyUrl;
+
+    // Step 1: Build QR from record data sent by admin (fast, no Sheet call)
+    if (body.record && Object.keys(body.record).length > 0) {
+      try {
+        const built = await buildQR(body.record, proto, host);
+        qrDataURL   = built.qrDataURL;
+        verifyUrl   = built.verifyUrl;
+        console.log('[approve] QR built from admin record, verifyUrl length:', verifyUrl?.length);
+      } catch (qrErr) {
+        console.error('[approve] QR build error:', qrErr.message);
+      }
     }
 
-    // Approve in Sheet + optionally set verifyUrl
-    const [approveResult] = await Promise.all([
-      sheet({ action: 'approve', token }),
-      verifyUrl ? sheet({ action: 'setVerifyUrl', token, verifyUrl }) : Promise.resolve()
-    ]);
-
-    if (!approveResult || approveResult.success === false) {
-      if (!qrDataURL) {
+    // Step 2: If no record sent or QR build failed, fetch from Sheet
+    if (!qrDataURL) {
+      console.log('[approve] Fetching record from Sheet for token:', token.substring(0, 8));
+      try {
         const rec = await sheetGet({ action: 'getByToken', token });
         if (rec && rec.token) {
           const built = await buildQR(rec, proto, host);
           qrDataURL  = built.qrDataURL;
           verifyUrl  = built.verifyUrl;
         }
+      } catch (fetchErr) {
+        console.error('[approve] Sheet fetch error:', fetchErr.message);
       }
     }
 
-    // ── Cache so confirm page gets instant response ────────
+    // Step 3: Mark approved in Sheet (fire and forget — don't block the response)
+    sheet({ action: 'approve', token })
+      .then(r => console.log('[approve] Sheet approve result:', JSON.stringify(r)))
+      .catch(e => console.error('[approve] Sheet approve error:', e.message));
+
+    // Step 4: Update verifyUrl in Sheet (also fire and forget)
+    if (verifyUrl) {
+      sheet({ action: 'setVerifyUrl', token, verifyUrl })
+        .catch(e => console.error('[approve] setVerifyUrl error:', e.message));
+    }
+
+    // Step 5: Cache approval for instant confirm polling response
     if (qrDataURL) {
+      const rec = body.record || {};
       approvedCache.set(token, {
         qrDataURL,
         verifyUrl,
-        expiresAt: body.record ? (body.record.expiresAtUTC || body.record.expiresAt) : null,
-        driver:    body.record || {}
+        expiresAt: rec.expiresAtUTC || rec.expiresAt || null,
+        driver:    rec
       });
+      console.log('[approve] Cached QR for token:', token.substring(0, 8));
     }
 
     return res.json({ success: true, qrDataURL, verifyUrl, token });
