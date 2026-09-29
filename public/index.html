@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>DFW Oil Energy – Driver Tracking</title>
+  <title>DFW Oil Energy – Truck Parking Registration</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,7 +16,7 @@
       <img src="assets/logo.jpg" alt="DFW Oil Energy Logo" class="logo" />
       <div class="header-text">
         <h1>DFW Oil Energy</h1>
-        <p class="subtitle">Wholesale Distributor — Driver Tracking Portal</p>
+        <p class="subtitle">Wholesale Distributor — Truck Parking Registration</p>
       </div>
     </div>
   </header>
@@ -24,12 +24,12 @@
   <!-- Main Form Card -->
   <main class="main-content">
     <div class="form-card">
-      <h2 class="form-title">Driver Trip Registration</h2>
+      <h2 class="form-title">Truck Parking Registration</h2>
       <p class="form-desc">All fields are required. Please fill out every section before submitting.</p>
 
       <!-- Success / Error banners (hidden by default) -->
       <div id="success-banner" class="banner banner-success" role="alert" hidden>
-        <span>&#10003;</span> Form submitted successfully! A confirmation email has been sent.
+        <span>&#10003;</span> Registration submitted successfully!
       </div>
       <div id="error-banner" class="banner banner-error" role="alert" hidden>
         <span>&#9888;</span> <span id="error-message">An error occurred. Please try again.</span>
@@ -89,9 +89,9 @@
           </div>
         </div>
 
-        <!-- Row 4: Trip Duration (Days / Hours / Minutes) -->
+        <!-- Row 4: Parking Duration (Days / Hours / Minutes) -->
         <div class="form-group full-width">
-          <label>Trip Duration <span class="req">*</span></label>
+          <label>Parking Duration <span class="req">*</span></label>
           <div class="duration-row">
             <div class="duration-unit">
               <input type="number" id="durationDays" name="durationDays"
@@ -194,7 +194,7 @@
         <!-- Submit -->
         <div class="form-group full-width submit-row">
           <button type="submit" id="submit-btn" class="btn-submit">
-            <span id="btn-text">Submit Driver Record</span>
+            <span id="btn-text">Register Truck for Parking</span>
             <span id="btn-spinner" class="spinner" hidden></span>
           </button>
         </div>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DFW Oil Energy – Verify Driver Pass</title>
+  <title>DFW Oil Energy – Verify Parking Pass</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     .verify-wrap {
@@ -184,7 +184,7 @@
       <img src="assets/logo.jpg" alt="DFW Oil Energy Logo" class="logo" />
       <div class="header-text">
         <h1>DFW Oil Energy</h1>
-        <p class="subtitle">Wholesale Distributor — Driver Pass Verification</p>
+        <p class="subtitle">Wholesale Distributor — Truck Parking Registration</p>
       </div>
     </div>
   </header>
@@ -241,7 +241,7 @@
             <div class="status-icon">✓</div>
             <div>
               <div class="status-title">PASS VALID</div>
-              <div class="status-sub">This driver is authorized for the current trip</div>
+              <div class="status-sub">This driver is authorized for truck parking</div>
             </div>
           </div>
           <div class="driver-info">
@@ -251,7 +251,7 @@
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
               <div class="info-item"><div class="info-label">Start Time</div><div class="info-value">${new Date(d.startTime).toLocaleString()}</div></div>
-              <div class="info-item"><div class="info-label">Trip Duration</div><div class="info-value">${d.numberOfDays} day${d.numberOfDays !== 1 ? 's' : ''}</div></div>
+              <div class="info-item"><div class="info-label">Parking Duration</div><div class="info-value">${d.durationLabel || (d.numberOfDays + ' day(s)')}</div></div>
             </div>
           </div>
           <div class="expiry-row">
@@ -265,7 +265,7 @@
             <div class="vc-cell"><span class="num" id="vs">--</span><span class="unit">Sec</span></div>
           </div>
         </div>
-        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+        <a href="index.html" class="btn-back">← Back to Parking Registration</a>
       `;
 
       // Start countdown
@@ -296,7 +296,7 @@
             <div class="status-icon">✗</div>
             <div>
               <div class="status-title">PASS EXPIRED</div>
-              <div class="status-sub">This driver's trip period has ended</div>
+              <div class="status-sub">This driver's parking period has ended</div>
             </div>
           </div>
           <div class="driver-info">
@@ -305,7 +305,7 @@
               <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
-              <div class="info-item full"><div class="info-label">Trip was</div><div class="info-value">${d.numberOfDays} day${d.numberOfDays !== 1 ? 's' : ''} from ${new Date(d.startTime).toLocaleString()}</div></div>
+              <div class="info-item full"><div class="info-label">Parking was</div><div class="info-value">${d.durationLabel || (d.numberOfDays + ' day(s)')} from ${new Date(d.startTime).toLocaleString()}</div></div>
             </div>
           </div>
           <div class="expiry-row">
@@ -314,9 +314,9 @@
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
-          Driver must submit a new record to get an active pass.
+          Driver must submit a new parking registration to get an active pass.
         </p>
-        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+        <a href="index.html" class="btn-back">← Back to Parking Registration</a>
       `;
     }
 
@@ -327,8 +327,8 @@
           <div class="status-header" style="background:linear-gradient(90deg,#0d47a1,#1565C0);">
             <div class="status-icon">⏳</div>
             <div>
-              <div class="status-title">TRIP NOT STARTED</div>
-              <div class="status-sub">This pass is valid but the trip hasn't started yet</div>
+              <div class="status-title">PARKING NOT STARTED</div>
+              <div class="status-sub">This pass is valid but the parking period hasn't started yet</div>
             </div>
           </div>
           <div class="driver-info">
@@ -337,18 +337,18 @@
               <div class="info-item"><div class="info-label">Company</div><div class="info-value">${esc(d.companyName)}</div></div>
               <div class="info-item"><div class="info-label">Truck Number</div><div class="info-value">${esc(d.truckNumber)}</div></div>
               <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${esc(d.phoneNumber)}</div></div>
-              <div class="info-item full"><div class="info-label">Trip Starts</div><div class="info-value" style="color:#64B5F6;">${new Date(d.startTime).toLocaleString()}</div></div>
+              <div class="info-item full"><div class="info-label">Parking Starts</div><div class="info-value" style="color:#64B5F6;">${new Date(d.startTime).toLocaleString()}</div></div>
             </div>
           </div>
           <div class="expiry-row">
-            <span class="exp-label">Trip duration</span>
-            <span class="exp-value" style="color:#64B5F6;">${d.numberOfDays} day${d.numberOfDays !== 1 ? 's' : ''}</span>
+            <span class="exp-label">Parking duration</span>
+            <span class="exp-value" style="color:#64B5F6;">${d.durationLabel || (d.numberOfDays + ' day(s)')}</span>
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
-          This pass will become active when the trip starts.
+          This pass will become active when the parking period starts.
         </p>
-        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+        <a href="index.html" class="btn-back">← Back to Parking Registration</a>
       `;
     }
 
@@ -367,7 +367,7 @@
         <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
           The QR code may be invalid, tampered with, or from an older system.
         </p>
-        <a href="index.html" class="btn-back">← Back to Driver Portal</a>
+        <a href="index.html" class="btn-back">← Back to Parking Registration</a>
       `;
     }
 

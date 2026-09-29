@@ -187,7 +187,7 @@
         const m = Number(document.getElementById('durationMins').value)  || 0;
         return (d * 1440 + h * 60 + m) >= 1;
       },
-      msg: 'Trip duration must be at least 1 minute.'
+      msg: 'Parking duration must be at least 1 minute.'
     },
     scanLicense:   { test: () => licenseCaptured, msg: 'Please capture a photo of your license.' },
     signatureData: { test: () => !sigEmpty, msg: 'Please provide your signature.' }

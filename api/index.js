@@ -49,7 +49,7 @@ app.post('/api/submit', async (req, res) => {
     const mins  = Number(b.durationMins)  || 0;
     const totalMins = days * 1440 + hours * 60 + mins;
     if (totalMins < 1)
-      return res.status(422).json({ success: false, message: 'Trip duration must be at least 1 minute.' });
+      return res.status(422).json({ success: false, message: 'Parking duration must be at least 1 minute.' });
     if (!b.phoneNumber  || !/^[\d\s\(\)\+\-\.]{7,20}$/.test(String(b.phoneNumber).trim()))
       return res.status(422).json({ success: false, message: 'A valid phone number is required.' });
     if (!b.licenseImageData || !String(b.licenseImageData).startsWith('data:image/'))

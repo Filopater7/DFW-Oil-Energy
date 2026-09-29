@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DFW Oil Energy – Submission Confirmed</title>
+  <title>DFW Oil Energy – Parking Registration Confirmed</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     /* ── Confirmation-page extras ── */
@@ -220,7 +220,7 @@
       <img src="assets/logo.jpg" alt="DFW Oil Energy Logo" class="logo" />
       <div class="header-text">
         <h1>DFW Oil Energy</h1>
-        <p class="subtitle">Wholesale Distributor — Driver Tracking Portal</p>
+        <p class="subtitle">Wholesale Distributor — Truck Parking Registration</p>
       </div>
     </div>
   </header>
@@ -240,8 +240,8 @@
 
           <div class="success-badge">
             <div class="success-icon">✓</div>
-            <h2>Submission Confirmed!</h2>
-            <p>Your driver record has been saved. Keep this QR pass for verification.</p>
+            <h2>Parking Registration Confirmed!</h2>
+            <p>Your truck parking record has been saved. Keep this QR pass for verification.</p>
           </div>
 
           <!-- Driver details -->
@@ -269,7 +269,7 @@
                 <div class="countdown-cell"><span class="num" id="cd-secs">--</span><span class="unit">Sec</span></div>
               </div>
             </div>
-            <p class="qr-note">Show this QR code at checkpoints. It will automatically expire after your trip period ends.</p>
+            <p class="qr-note">Show this QR code at the parking checkpoint. It will automatically expire after your parking period ends.</p>
           </div>
 
           <!-- Actions -->
@@ -284,7 +284,7 @@
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Submit Another Record
+            Register Another Truck
           </a>
 
         </div>
@@ -337,7 +337,7 @@
         ['Truck Number',  driver.truckNumber],
         ['Email',         driver.driverEmail],
         ['Start Time',    new Date(driver.startTime).toLocaleString()],
-        ['Trip Duration', driver.durationLabel || `${driver.durationDays || 0}d ${driver.durationHours || 0}h ${driver.durationMins || 0}m`],
+        ['Parking Duration', driver.durationLabel || `${driver.durationDays || 0}d ${driver.durationHours || 0}h ${driver.durationMins || 0}m`],
         ['Phone',         driver.phoneNumber]
       ];
       table.innerHTML = rows.map(([label, value]) =>
