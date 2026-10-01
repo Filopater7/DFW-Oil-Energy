@@ -352,6 +352,12 @@ app.post('/api/admin/approve/:token', adminAuth, async (req, res) => {
     sheet({ action: 'approve', token })
       .catch(e => console.error('[approve] Sheet error:', e.message));
 
+    // Write verifyUrl to sheet — fire-and-forget
+    if (verifyUrl) {
+      sheet({ action: 'setVerifyUrl', token, verifyUrl })
+        .catch(e => console.error('[approve] setVerifyUrl error:', e.message));
+    }
+
     // Cache for instant confirm polling — no more Sheet reads for this token
     if (qrDataURL) {
       const rec = body.record || {};
