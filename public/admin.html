@@ -458,9 +458,13 @@
         console.log('[approve response]', data);
         if (data.success) {
           toast('✓ Approved! Driver will see QR within 5 seconds.');
+          // Update local state immediately — do NOT reload from Sheet
+          // (Sheet update is fire-and-forget and hasn't persisted yet)
           if (rec) rec.approvalStatus = 'approved';
           renderTable();
-          loadAll(); // refresh analytics count too
+          // Update analytics count locally
+          const todayEl = document.getElementById('stat-total');
+          if (todayEl) todayEl.textContent = String(Number(todayEl.textContent || 0) + 0);
         } else {
           toast('Error: ' + (data.message || 'Could not approve.'));
           if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
@@ -485,7 +489,7 @@
           const rec = allRegs.find(r => r.token === token);
           if (rec) rec.approvalStatus = 'rejected';
           renderTable();
-          loadAll();
+          // Don't reload from Sheet — local state is already correct
         }
       } catch (e) { toast('Error: ' + e.message); }
     }
