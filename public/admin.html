@@ -273,12 +273,12 @@
     let activeFilter = 'all';
     const CACHE_KEY  = 'dfw_admin_cache';
 
-    // Load from cache instantly before any network call
     function loadCache() {
       try {
         const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
         if (c && c.registrations) {
-          allRegs = c.registrations.slice().reverse();
+          // allRegs is always stored newest-first in cache
+          allRegs = c.registrations.slice();
           renderTable();
           applyAnalytics(c.analytics || {});
         }
@@ -286,7 +286,13 @@
     }
 
     function saveCache(data) {
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+      try {
+        // Always store newest-first (allRegs is already reversed)
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          registrations: data.registrations || allRegs,
+          analytics:     data.analytics
+        }));
+      } catch {}
     }
 
     const loginSection    = document.getElementById('login-section');
@@ -349,13 +355,12 @@
     document.getElementById('refresh-btn').addEventListener('click', loadAll);
 
     async function loadAll() {
-      // Single request for both analytics + registrations
       try {
         const res  = await fetch('/api/admin/all', { headers: { 'x-admin-password': adminPwd } });
         const data = await res.json();
         if (data.registrations) {
-          allRegs = data.registrations.slice().reverse();
-          saveCache(data);
+          allRegs = data.registrations.slice().reverse(); // newest first
+          saveCache({ registrations: allRegs, analytics: data.analytics });
           renderTable();
           applyAnalytics(data.analytics || {});
         }
@@ -458,13 +463,11 @@
         console.log('[approve response]', data);
         if (data.success) {
           toast('✓ Approved! Driver will see QR within 5 seconds.');
-          // Update local state immediately — do NOT reload from Sheet
-          // (Sheet update is fire-and-forget and hasn't persisted yet)
+          // Update local state immediately
           if (rec) rec.approvalStatus = 'approved';
+          // Update the localStorage cache so refresh doesn't revert to pending
+          saveCache({ registrations: allRegs.slice().reverse(), analytics: null });
           renderTable();
-          // Update analytics count locally
-          const todayEl = document.getElementById('stat-total');
-          if (todayEl) todayEl.textContent = String(Number(todayEl.textContent || 0) + 0);
         } else {
           toast('Error: ' + (data.message || 'Could not approve.'));
           if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
@@ -488,8 +491,9 @@
           toast('Registration rejected.');
           const rec = allRegs.find(r => r.token === token);
           if (rec) rec.approvalStatus = 'rejected';
+          // Update the localStorage cache so refresh doesn't revert
+          saveCache({ registrations: allRegs.slice().reverse(), analytics: null });
           renderTable();
-          // Don't reload from Sheet — local state is already correct
         }
       } catch (e) { toast('Error: ' + e.message); }
     }
