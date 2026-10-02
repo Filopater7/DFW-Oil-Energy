@@ -21,7 +21,7 @@
   const clearBtn = document.getElementById('clear-signature');
   const sigInput = document.getElementById('signatureData');
 
-  // Camera capture
+  // Camera capture DOM refs
   const openCameraBtn     = document.getElementById('open-camera-btn');
   const cameraIdle        = document.getElementById('camera-idle');
   const cameraPreviewWrap = document.getElementById('camera-preview-wrap');
@@ -29,9 +29,6 @@
   const captureBtn        = document.getElementById('capture-btn');
   const cancelCameraBtn   = document.getElementById('cancel-camera-btn');
   const switchCameraBtn   = document.getElementById('switch-camera-btn');
-  const cameraCaptured    = document.getElementById('camera-captured');
-  const capturedImg       = document.getElementById('captured-img');
-  const retakeBtn         = document.getElementById('retake-btn');
   const licenseImageData  = document.getElementById('licenseImageData');
 
   // ── Signature Pad ──────────────────────────────────────────
@@ -91,35 +88,69 @@
   });
   window.addEventListener('resize', resizeCanvas);
 
-  // ── Camera Capture ─────────────────────────────────────────
-  let stream         = null;
-  let facingMode     = 'environment'; // start with rear camera
-  let licenseCaptured = false;
+  // ── Camera Capture — Front & Back ─────────────────────────
+  let stream          = null;
+  let facingMode      = 'environment';
+  let capturingSide   = 'front';   // 'front' or 'back'
+  let frontCaptured   = false;
+  let backCaptured    = false;
+  let licenseCaptured = false;     // true only when BOTH sides done
+
+  // DOM refs for new elements
+  const cameraFrontDone  = document.getElementById('camera-front-done');
+  const cameraBothDone   = document.getElementById('camera-both-done');
+  const capturedFrontImg = document.getElementById('captured-front-img');
+  const capturedFrontFinal = document.getElementById('captured-front-final');
+  const capturedBackImg  = document.getElementById('captured-back-img');
+  const licenseBackData  = document.getElementById('licenseBackImageData');
+  const dotFront         = document.getElementById('dot-front');
+  const dotBack          = document.getElementById('dot-back');
+  const frameLabel       = document.getElementById('camera-frame-label');
+  const openCameraLabel  = document.getElementById('open-camera-label');
+
+  function updateStepDots() {
+    if (!frontCaptured && !backCaptured) {
+      dotFront.className = 'step-dot active';
+      dotBack.className  = 'step-dot';
+    } else if (frontCaptured && !backCaptured) {
+      dotFront.className = 'step-dot done';
+      dotBack.className  = 'step-dot active';
+    } else {
+      dotFront.className = 'step-dot done';
+      dotBack.className  = 'step-dot done';
+    }
+  }
 
   async function startCamera(facing) {
-    // Stop any existing stream first
     stopStream();
     facingMode = facing;
-
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
       });
       cameraVideo.srcObject = stream;
+      // Update overlay label based on which side we're capturing
+      if (frameLabel) frameLabel.textContent =
+        capturingside === 'back'
+          ? 'Position BACK of license inside the frame'
+          : 'Position FRONT of license inside the frame';
       cameraIdle.hidden        = true;
+      cameraFrontDone.hidden   = true;
+      cameraBothDone.hidden    = true;
       cameraPreviewWrap.hidden = false;
-      cameraCaptured.hidden    = true;
       clearFieldError('scanLicense');
     } catch (err) {
-      console.error('Camera error:', err);
       let msg = 'Could not access camera.';
-      if (err.name === 'NotAllowedError')  msg = 'Camera permission denied. Please allow camera access and try again.';
+      if (err.name === 'NotAllowedError')  msg = 'Camera permission denied.';
       if (err.name === 'NotFoundError')    msg = 'No camera found on this device.';
       if (err.name === 'NotReadableError') msg = 'Camera is in use by another app.';
       showFieldError('scanLicense', msg);
     }
   }
+
+  // Alias so resetForm still works
+  const capturingside = { get value() { return capturingside; } };
 
   function stopStream() {
     if (stream) {
@@ -129,20 +160,61 @@
     }
   }
 
-  // Open camera
-  openCameraBtn.addEventListener('click', () => startCamera(facingMode));
-
-  // Switch between front / rear camera
-  switchCameraBtn.addEventListener('click', () => {
-    startCamera(facingMode === 'environment' ? 'user' : 'environment');
+  // Open camera — starts with front
+  openCameraBtn.addEventListener('click', () => {
+    capturingside_set('front');
+    startCamera(facingMode);
   });
 
-  // Cancel – go back to idle
+  // Helper to set capturing side (avoids let/const issues)
+  let _capturingSide = 'front';
+  function capturingside_set(side) { _capturingSide = side; }
+  function capturingside_get()     { return _capturingSide; }
+
+  // Fix startCamera to use the helper
+  async function startCameraForSide(side, facing) {
+    _capturingSide = side;
+    stopStream();
+    facingMode = facing || facingMode;
+    if (frameLabel) frameLabel.textContent =
+      side === 'back'
+        ? 'Position BACK of license inside the frame'
+        : 'Position FRONT of license inside the frame';
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+      cameraVideo.srcObject    = stream;
+      cameraIdle.hidden        = true;
+      cameraFrontDone.hidden   = true;
+      cameraBothDone.hidden    = true;
+      cameraPreviewWrap.hidden = false;
+      clearFieldError('scanLicense');
+    } catch (err) {
+      let msg = 'Could not access camera.';
+      if (err.name === 'NotAllowedError')  msg = 'Camera permission denied.';
+      if (err.name === 'NotFoundError')    msg = 'No camera found on this device.';
+      if (err.name === 'NotReadableError') msg = 'Camera is in use by another app.';
+      showFieldError('scanLicense', msg);
+    }
+  }
+
+  openCameraBtn.addEventListener('click', () => startCameraForSide('front', facingMode));
+
+  switchCameraBtn.addEventListener('click', () => {
+    facingMode = facingMode === 'environment' ? 'user' : 'environment';
+    startCameraForSide(_capturingSide, facingMode);
+  });
+
   cancelCameraBtn.addEventListener('click', () => {
     stopStream();
     cameraPreviewWrap.hidden = true;
-    cameraIdle.hidden        = false;
-    if (!licenseCaptured) licenseImageData.value = '';
+    if (frontCaptured) {
+      cameraFrontDone.hidden = false;
+    } else {
+      cameraIdle.hidden = false;
+    }
   });
 
   // Capture photo
@@ -151,25 +223,72 @@
     offscreen.width  = cameraVideo.videoWidth  || 1280;
     offscreen.height = cameraVideo.videoHeight || 720;
     offscreen.getContext('2d').drawImage(cameraVideo, 0, 0);
-
     const dataUrl = offscreen.toDataURL('image/jpeg', 0.92);
-    licenseImageData.value = dataUrl;
-    capturedImg.src        = dataUrl;
-    licenseCaptured        = true;
 
     stopStream();
     cameraPreviewWrap.hidden = true;
-    cameraCaptured.hidden    = false;
-    clearFieldError('scanLicense');
+
+    if (_capturingSide === 'front') {
+      // Front captured
+      frontCaptured = true;
+      licenseImageData.value   = dataUrl;
+      capturedFrontImg.src     = dataUrl;
+      capturedFrontFinal.src   = dataUrl;
+      cameraFrontDone.hidden   = false;
+      updateStepDots();
+      clearFieldError('scanLicense');
+    } else {
+      // Back captured
+      backCaptured    = true;
+      licenseCaptured = true;
+      if (licenseBackData) licenseBackData.value = dataUrl;
+      capturedBackImg.src    = dataUrl;
+      cameraFrontDone.hidden = true;
+      cameraBothDone.hidden  = false;
+      updateStepDots();
+      clearFieldError('scanLicense');
+    }
   });
 
-  // Retake
-  retakeBtn.addEventListener('click', () => {
+  // Scan back button (shown after front is captured)
+  document.getElementById('scan-back-btn').addEventListener('click', () =>
+    startCameraForSide('back', facingMode)
+  );
+
+  // Retake front (from front-done state)
+  document.getElementById('retake-front-btn').addEventListener('click', () => {
+    frontCaptured          = false;
+    backCaptured           = false;
     licenseCaptured        = false;
     licenseImageData.value = '';
-    capturedImg.src        = '';
-    cameraCaptured.hidden  = true;
-    startCamera(facingMode);
+    if (licenseBackData) licenseBackData.value = '';
+    cameraFrontDone.hidden = true;
+    updateStepDots();
+    startCameraForSide('front', facingMode);
+  });
+
+  // Retake front (from both-done state)
+  document.getElementById('retake-front-final-btn').addEventListener('click', () => {
+    frontCaptured          = false;
+    backCaptured           = false;
+    licenseCaptured        = false;
+    licenseImageData.value = '';
+    if (licenseBackData) licenseBackData.value = '';
+    cameraBothDone.hidden  = true;
+    updateStepDots();
+    startCameraForSide('front', facingMode);
+  });
+
+  // Retake back (from both-done state)
+  document.getElementById('retake-back-btn').addEventListener('click', () => {
+    backCaptured    = false;
+    licenseCaptured = false;
+    if (licenseBackData) licenseBackData.value = '';
+    capturedBackImg.src   = '';
+    cameraBothDone.hidden = true;
+    cameraFrontDone.hidden = false;
+    updateStepDots();
+    startCameraForSide('back', facingMode);
   });
 
   // ── Validation ─────────────────────────────────────────────
@@ -189,7 +308,7 @@
       },
       msg: 'Parking duration must be at least 1 minute.'
     },
-    scanLicense:   { test: () => licenseCaptured, msg: 'Please capture a photo of your license.' },
+    scanLicense:   { test: () => licenseCaptured, msg: 'Please capture both sides of your license.' },
     signatureData: { test: () => !sigEmpty, msg: 'Please provide your signature.' }
   };
 
@@ -277,6 +396,7 @@
         durationHours:    document.getElementById('durationHours').value || '0',
         durationMins:     document.getElementById('durationMins').value  || '0',
         licenseImageData: licenseImageData.value,
+        licenseBackImageData: licenseBackData ? licenseBackData.value : '',
         signatureData:    sigInput.value,
         tzOffset:         new Date().getTimezoneOffset()
       };
@@ -313,17 +433,22 @@
 
   function resetForm() {
     form.reset();
-    // Reset signature
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     sigEmpty = true; sigInput.value = '';
-    // Reset camera
     stopStream();
+    frontCaptured   = false;
+    backCaptured    = false;
     licenseCaptured = false;
     licenseImageData.value = '';
-    capturedImg.src = '';
-    cameraCaptured.hidden    = true;
+    if (licenseBackData) licenseBackData.value = '';
+    if (capturedFrontImg)   capturedFrontImg.src   = '';
+    if (capturedFrontFinal) capturedFrontFinal.src = '';
+    if (capturedBackImg)    capturedBackImg.src    = '';
+    cameraFrontDone.hidden   = true;
+    cameraBothDone.hidden    = true;
     cameraPreviewWrap.hidden = true;
     cameraIdle.hidden        = false;
+    updateStepDots();
   }
 
   // ── UI Helpers ─────────────────────────────────────────────

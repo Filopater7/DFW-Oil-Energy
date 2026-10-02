@@ -126,7 +126,9 @@ app.post('/api/submit', async (req, res) => {
     if (totalMins < 1)
       return res.status(422).json({ success: false, message: 'Parking duration must be at least 1 minute.' });
     if (!b.licenseImageData || !String(b.licenseImageData).startsWith('data:image/'))
-      return res.status(422).json({ success: false, message: 'A captured license photo is required.' });
+      return res.status(422).json({ success: false, message: 'A captured license photo (front) is required.' });
+    if (!b.licenseBackImageData || !String(b.licenseBackImageData).startsWith('data:image/'))
+      return res.status(422).json({ success: false, message: 'A captured license photo (back) is required.' });
     if (!b.signatureData    || !String(b.signatureData).startsWith('data:image/'))
       return res.status(422).json({ success: false, message: 'A driver signature is required.' });
 
