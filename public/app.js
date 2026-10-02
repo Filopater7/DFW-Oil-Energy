@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    DFW Oil Energy – Driver Tracking Portal
    Frontend Logic: validation, camera capture, signature pad, submit
    ============================================================ */
@@ -11,7 +11,7 @@
   const submitBtn     = document.getElementById('submit-btn');
   const btnText       = document.getElementById('btn-text');
   const btnSpinner    = document.getElementById('btn-spinner');
-  const successBanner = document.getElementById('success-banner');
+
   const errorBanner   = document.getElementById('error-banner');
   const errorMessage  = document.getElementById('error-message');
 
@@ -83,7 +83,7 @@
     resizeCanvas();
     // Always reset form on load — clears back-button cached data
     form.reset();
-    if (successBanner) successBanner.hidden = true;
+
     if (errorBanner)   errorBanner.hidden   = true;
   });
   window.addEventListener('resize', resizeCanvas);
@@ -465,7 +465,7 @@
   function showError(msg) {
     errorMessage.textContent = msg;
     errorBanner.hidden = false;
-    if (successBanner) successBanner.hidden = true;
+
   }
 
   // Stop camera if user navigates away
@@ -492,7 +492,7 @@
     cameraPreviewWrap.hidden = true;
     cameraIdle.hidden        = false;
     // Hide banners
-    if (successBanner) successBanner.hidden = true;
+
     if (errorBanner)   errorBanner.hidden   = true;
   }
 

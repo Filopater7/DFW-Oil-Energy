@@ -50,13 +50,7 @@
       <h2 class="form-title">Truck Parking Registration</h2>
       <p class="form-desc">All fields are required. Please fill out every section before submitting.</p>
 
-      <!-- Success / Error banners (hidden by default) -->
-      <div id="success-banner" class="banner banner-success" role="alert" hidden>
-        <span>&#10003;</span> Registration submitted successfully!
-      </div>
-      <div id="error-banner" class="banner banner-error" role="alert" hidden>
-        <span>&#9888;</span> <span id="error-message">An error occurred. Please try again.</span>
-      </div>
+
 
       <form id="driver-form" novalidate>
 
@@ -262,6 +256,9 @@
 
         <!-- Submit -->
         <div class="form-group full-width submit-row">
+          <div id="error-banner" class="banner banner-error" role="alert" hidden>
+            <span>&#9888;</span> <span id="error-message">An error occurred. Please try again.</span>
+          </div>
           <button type="submit" id="submit-btn" class="btn-submit">
             <span id="btn-text">Register Truck for Parking</span>
             <span id="btn-spinner" class="spinner" hidden></span>
