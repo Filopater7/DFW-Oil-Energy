@@ -204,6 +204,34 @@ input.invalid { border-color: var(--error) !important; }
   min-height: 16px;
 }
 
+/* ── PWA INSTALL BUTTON ─────────────────────────────────── */
+.btn-pwa-install {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-pwa-install:hover {
+  background: rgba(255,255,255,0.28);
+  border-color: rgba(255,255,255,0.8);
+}
+
+.btn-pwa-install svg {
+  flex-shrink: 0;
+}
+
 /* ── LICENSE STEP INDICATOR ─────────────────────────────── */
 .license-steps {
   display: flex;

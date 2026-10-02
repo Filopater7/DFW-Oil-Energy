@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payless Fuel Centers of Texas – Registration Status</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1B2A4A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Payless Fuel" />
+  <link rel="apple-touch-icon" href="assets/logo.jpg" />
   <link rel="stylesheet" href="style.css" />
   <style>
     .confirm-wrap { max-width: 680px; margin: 0 auto; width: 100%; }
@@ -154,6 +159,13 @@
         <h1>Payless Fuel Centers of Texas</h1>
         <p class="subtitle">Truck Parking Registration — Texas</p>
       </div>
+      <button id="pwa-install-btn" class="btn-pwa-install" hidden>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Install App
+      </button>
     </div>
   </header>
 
@@ -413,5 +425,6 @@
     }
   })();
   </script>
+  <script src="pwa.js"></script>
 </body>
 </html>
