@@ -14,6 +14,14 @@
   <meta name="apple-mobile-web-app-title" content="Payless Fuel" />
   <link rel="apple-touch-icon" href="assets/logo.jpg" />
   <link rel="stylesheet" href="style.css" />
+  <script>
+    // Capture install prompt ASAP before any other script
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault(); window._pwaPrompt = e;
+      var b = document.getElementById('pwa-install-btn');
+      if (b) b.hidden = false;
+    });
+  </script>
 </head>
 <body>
 
@@ -26,7 +34,7 @@
         <p class="subtitle">Truck Parking Registration — Texas</p>
       </div>
       <!-- PWA Install button — shown only when browser supports it -->
-      <button id="pwa-install-btn" class="btn-pwa-install" hidden>
+      <button id="pwa-install-btn" class="btn-pwa-install">
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
