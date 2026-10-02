@@ -132,6 +132,9 @@ body {
   gap: 10px;
 }
 
+/* Ensure hidden attribute always wins over display:flex */
+.banner[hidden] { display: none !important; }
+
 .banner-success {
   background: #E8F5E9;
   border: 1px solid #43A047;
