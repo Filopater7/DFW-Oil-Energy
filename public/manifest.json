@@ -3,22 +3,35 @@
   "short_name": "Payless Fuel",
   "description": "Truck Parking Registration — Payless Fuel Centers of Texas",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F0F3FA",
   "theme_color": "#1B2A4A",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
     {
-      "src": "assets/logo.jpg",
+      "src": "assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "assets/logo.jpg",
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["business", "utilities"],
