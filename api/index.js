@@ -145,21 +145,37 @@ app.post('/api/submit', async (req, res) => {
     const startTimeCST = new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' });
     const expiresAtCST = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 
-    // ── Fire-and-forget Sheet save — do NOT block the response ──
+    // Build photo viewer URLs
+    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const host  = req.headers.host;
+    const baseUrl = `${proto}://${host}`;
+    const photoFrontUrl = `${baseUrl}/photo.html?token=${token}&type=front`;
+    const photoBackUrl  = `${baseUrl}/photo.html?token=${token}&type=back`;
+    const photoSigUrl   = `${baseUrl}/photo.html?token=${token}&type=signature`;
+
+    // ── Fire-and-forget Sheet save — includes images and photo URLs ──
     sheet({
       action: 'save', token,
-      submittedAt:     new Date().toISOString(),
-      companyName:     String(b.companyName).trim(),
-      driverName:      String(b.driverName).trim(),
-      driverEmail:     String(b.driverEmail).trim(),
-      truckNumber:     String(b.truckNumber).trim(),
-      phoneNumber:     String(b.phoneNumber).trim(),
-      startTime:       startTimeCST,
-      startTimeUTC:    startUTC.toISOString(),
-      parkingDuration: durationLabel,
-      expiresAt:       expiresAtCST,
-      expiresAtUTC:    expiresAt.toISOString(),
-      approvalStatus:  'pending'
+      submittedAt:      new Date().toISOString(),
+      companyName:      String(b.companyName).trim(),
+      driverName:       String(b.driverName).trim(),
+      driverEmail:      String(b.driverEmail).trim(),
+      truckNumber:      String(b.truckNumber).trim(),
+      phoneNumber:      String(b.phoneNumber).trim(),
+      startTime:        startTimeCST,
+      startTimeUTC:     startUTC.toISOString(),
+      parkingDuration:  durationLabel,
+      expiresAt:        expiresAtCST,
+      expiresAtUTC:     expiresAt.toISOString(),
+      approvalStatus:   'pending',
+      // Images stored in sheet (base64) — used by /api/photo endpoint
+      licenseFront:     String(b.licenseImageData     || ''),
+      licenseBack:      String(b.licenseBackImageData || ''),
+      signature:        String(b.signatureData        || ''),
+      // Clickable photo URLs for sheet display
+      photoFrontUrl,
+      photoBackUrl,
+      photoSigUrl
     }).catch(e => console.warn('[submit] Sheet save error:', e.message));
 
     // Respond immediately — driver doesn't wait for Sheet
@@ -269,6 +285,30 @@ app.get('/api/confirm/:token', async (req, res) => {
   } catch (e) {
     console.error('[/api/confirm]', e.stack || e.message);
     return res.status(500).json({ found: false, message: 'Server error: ' + e.message });
+  }
+});
+
+// ── GET /api/photo ─────────────────────────────────────────
+// Returns base64 image for a given token and type (front/back/signature)
+// Used by photo.html viewer
+app.get('/api/photo', async (req, res) => {
+  try {
+    const { token, type } = req.query;
+    if (!token || !['front','back','signature'].includes(type))
+      return res.status(400).json({ error: 'Invalid parameters.' });
+
+    const data = await sheetGet({ action: 'getPhotoByToken', token, type });
+    if (!data || !data.image)
+      return res.status(404).json({ error: 'Photo not found.' });
+
+    return res.json({
+      image:      data.image,
+      driverName: data.driverName  || '',
+      truckNumber: data.truckNumber || ''
+    });
+  } catch (e) {
+    console.error('[/api/photo]', e.message);
+    return res.status(500).json({ error: 'Server error.' });
   }
 });
 

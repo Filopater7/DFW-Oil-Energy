@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Viewer — Payless Fuel Centers</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0A1628;
+      color: #E8EDF5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .header img { width: 48px; height: 48px; border-radius: 6px; }
+    .header h1 { font-size: 1rem; font-weight: 700; color: #fff; }
+    .header p  { font-size: 0.8rem; color: #7B9AC4; }
+
+    .photo-card {
+      background: #1B2A4A;
+      border: 1px solid #2E4270;
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .photo-title {
+      background: #243655;
+      padding: 14px 20px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #A8BFE0;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid #2E4270;
+    }
+    .photo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      min-height: 200px;
+      background: #0A1628;
+    }
+    .photo-wrap img {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #7B9AC4;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(74,111,165,0.3);
+      border-top-color: #4A6FA5;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error {
+      text-align: center;
+      padding: 40px;
+      color: #EF9A9A;
+    }
+    .error .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    .photo-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #2E4270;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #7B9AC4;
+    }
+    .btn-download {
+      background: #1B2A4A;
+      border: 1px solid #4A6FA5;
+      color: #A8BFE0;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-download:hover { background: #243655; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="assets/logo.jpg" alt="Logo" />
+    <div>
+      <h1>Payless Fuel Centers of Texas</h1>
+      <p>Photo Viewer</p>
+    </div>
+  </div>
+
+  <div class="photo-card">
+    <div class="photo-title" id="photo-title">Loading…</div>
+    <div class="photo-wrap" id="photo-wrap">
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>Loading photo…</span>
+      </div>
+    </div>
+    <div class="photo-footer">
+      <span id="photo-info">—</span>
+      <a id="download-btn" class="btn-download" download="photo.jpg">⬇ Download</a>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+    const type   = params.get('type'); // 'front', 'back', 'signature'
+
+    const titleEl    = document.getElementById('photo-title');
+    const wrapEl     = document.getElementById('photo-wrap');
+    const infoEl     = document.getElementById('photo-info');
+    const downloadBtn= document.getElementById('download-btn');
+
+    const LABELS = {
+      front:     '📷  License — Front Side',
+      back:      '📷  License — Back Side',
+      signature: '✍️  Driver Signature'
+    };
+
+    titleEl.textContent = LABELS[type] || 'Photo';
+
+    if (!token || !type) {
+      showError('Invalid link. Token or type missing.');
+      return;
+    }
+
+    fetch(`/api/photo?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.image) { showError('Photo not found.'); return; }
+
+        const img = document.createElement('img');
+        img.src = data.image;
+        img.alt = LABELS[type] || 'Photo';
+        wrapEl.innerHTML = '';
+        wrapEl.appendChild(img);
+
+        infoEl.textContent = data.driverName
+          ? `${data.driverName} — ${data.truckNumber || ''}`
+          : 'Driver photo';
+
+        downloadBtn.href     = data.image;
+        downloadBtn.download = `${type}-${token.substring(0,8)}.jpg`;
+      })
+      .catch(() => showError('Could not load photo. Please try again.'));
+
+    function showError(msg) {
+      wrapEl.innerHTML = `
+        <div class="error">
+          <div class="icon">⚠️</div>
+          <p>${msg}</p>
+        </div>`;
+    }
+  })();
+  </script>
+</body>
+</html>
