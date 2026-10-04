@@ -309,8 +309,8 @@ app.get('/api/confirm/:token', async (req, res) => {
 });
 
 // ── GET /api/photo ─────────────────────────────────────────
-// Returns base64 image for a given token and type (front/back/signature)
-// Used by photo.html viewer
+// Returns image info for a given token and type (front/back/signature)
+// If the sheet stores a Drive URL, redirects to it directly
 app.get('/api/photo', async (req, res) => {
   try {
     const { token, type } = req.query;
@@ -318,17 +318,25 @@ app.get('/api/photo', async (req, res) => {
       return res.status(400).json({ error: 'Invalid parameters.' });
 
     const data = await sheetGet({ action: 'getPhotoByToken', token, type });
-    if (!data || !data.image)
-      return res.status(404).json({ error: 'Photo not found.' });
 
+    if (!data || (!data.image && !data.driveUrl))
+      return res.status(404).json({ error: 'Photo not found.', image: null });
+
+    // If it's a Drive URL — redirect directly to it
+    if (data.driveUrl || (data.image && data.image.startsWith('https://'))) {
+      const url = data.driveUrl || data.image;
+      return res.redirect(302, url);
+    }
+
+    // Legacy: base64 data
     return res.json({
-      image:      data.image,
-      driverName: data.driverName  || '',
+      image:       data.image || null,
+      driverName:  data.driverName  || '',
       truckNumber: data.truckNumber || ''
     });
   } catch (e) {
     console.error('[/api/photo]', e.message);
-    return res.status(500).json({ error: 'Server error.' });
+    return res.status(500).json({ error: 'Server error.', image: null });
   }
 });
 

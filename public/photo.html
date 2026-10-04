@@ -201,8 +201,33 @@
     }
 
     fetch(`/api/photo?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`)
-      .then(r => r.json())
+      .then(r => {
+        // If we got redirected to Drive, the browser followed it
+        // Check if response is JSON or actual image
+        const ct = r.headers.get('content-type') || '';
+        if (ct.includes('application/json')) return r.json();
+        // Non-JSON means it was redirected to a Drive URL that returned HTML
+        // In that case the fetch was already redirected — show the image URL
+        return { driveRedirect: r.url };
+      })
       .then(data => {
+        // Drive redirect — open directly
+        if (data && data.driveRedirect && data.driveRedirect.includes('google.com')) {
+          window.location.href = data.driveRedirect;
+          return;
+        }
+
+        if (!data || (!data.image && !data.driveUrl)) {
+          showEmpty();
+          return;
+        }
+
+        // Drive URL stored in image field
+        if (data.image && data.image.startsWith('https://')) {
+          window.location.href = data.image;
+          return;
+        }
+
         if (!data.image || data.image.length < 50) {
           showEmpty();
           return;
