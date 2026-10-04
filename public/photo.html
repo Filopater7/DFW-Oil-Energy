@@ -8,59 +8,82 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0A1628;
-      color: #E8EDF5;
+      background: #F0F3FA;
+      color: #1B2A4A;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 20px;
+      padding: 24px 16px 40px;
     }
-    .header {
+
+    .site-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      text-align: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      text-align: left;
+      background: #1B2A4A;
+      border-bottom: 3px solid #C8102E;
+      padding: 14px 24px;
+      width: 100%;
+      max-width: 760px;
+      border-radius: 10px 10px 0 0;
     }
-    .header img { width: 48px; height: 48px; border-radius: 6px; }
-    .header h1 { font-size: 1rem; font-weight: 700; color: #fff; }
-    .header p  { font-size: 0.8rem; color: #7B9AC4; }
+    .site-header img {
+      width: 52px; height: 52px;
+      border-radius: 6px;
+      background: #fff;
+      object-fit: cover;
+    }
+    .site-header h1 { font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+    .site-header p  { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
 
     .photo-card {
-      background: #1B2A4A;
-      border: 1px solid #2E4270;
-      border-radius: 12px;
+      background: #FFFFFF;
+      border: 1px solid #D0D8E8;
+      border-radius: 0 0 10px 10px;
       overflow: hidden;
-      max-width: 700px;
+      max-width: 760px;
       width: 100%;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 20px rgba(27,42,74,0.12);
     }
+
     .photo-title {
-      background: #243655;
-      padding: 14px 20px;
-      font-size: 0.9rem;
+      background: #1B2A4A;
+      padding: 13px 20px;
+      font-size: 0.85rem;
       font-weight: 700;
-      color: #A8BFE0;
+      color: #FFFFFF;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      border-bottom: 1px solid #2E4270;
     }
+
     .photo-wrap {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      min-height: 200px;
-      background: #0A1628;
+      padding: 24px;
+      min-height: 260px;
+      background: #FFFFFF;
     }
+
     .photo-wrap img {
       max-width: 100%;
-      max-height: 70vh;
+      max-height: 65vh;
       border-radius: 8px;
       object-fit: contain;
+      border: 1px solid #D0D8E8;
+      box-shadow: 0 2px 12px rgba(27,42,74,0.1);
     }
+
+    /* Signature — white background, show ink clearly */
+    .photo-wrap img.sig-img {
+      background: #FFFFFF;
+      padding: 12px;
+      border: 1.5px solid #1B2A4A;
+    }
+
     .loading {
       display: flex;
       flex-direction: column;
@@ -70,8 +93,8 @@
     }
     .spinner {
       width: 36px; height: 36px;
-      border: 3px solid rgba(74,111,165,0.3);
-      border-top-color: #4A6FA5;
+      border: 3px solid #D0D8E8;
+      border-top-color: #1B2A4A;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -79,37 +102,55 @@
 
     .error {
       text-align: center;
-      padding: 40px;
-      color: #EF9A9A;
+      padding: 40px 20px;
+      color: #C62828;
     }
     .error .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .error p { font-size: 0.95rem; }
+    .error .hint {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: #6B7FA8;
+    }
 
     .photo-footer {
       padding: 14px 20px;
-      border-top: 1px solid #2E4270;
+      border-top: 1px solid #D0D8E8;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 0.8rem;
-      color: #7B9AC4;
+      background: #F4F6FA;
+      font-size: 0.82rem;
+      color: #6B7FA8;
     }
+
     .btn-download {
       background: #1B2A4A;
-      border: 1px solid #4A6FA5;
-      color: #A8BFE0;
-      padding: 6px 16px;
+      border: none;
+      color: #FFFFFF;
+      padding: 8px 20px;
       border-radius: 6px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
+      font-weight: 600;
       cursor: pointer;
       text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: background 0.2s;
     }
-    .btn-download:hover { background: #243655; }
+    .btn-download:hover { background: #263D6B; }
+
+    @media (max-width: 600px) {
+      body { padding: 0 0 40px; }
+      .site-header { border-radius: 0; }
+      .photo-card { border-radius: 0; border-left: none; border-right: none; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
+  <div class="site-header">
     <img src="assets/logo.jpg" alt="Logo" />
     <div>
       <h1>Payless Fuel Centers of Texas</h1>
@@ -119,15 +160,19 @@
 
   <div class="photo-card">
     <div class="photo-title" id="photo-title">Loading…</div>
+
     <div class="photo-wrap" id="photo-wrap">
       <div class="loading">
         <div class="spinner"></div>
         <span>Loading photo…</span>
       </div>
     </div>
+
     <div class="photo-footer">
       <span id="photo-info">—</span>
-      <a id="download-btn" class="btn-download" download="photo.jpg">⬇ Download</a>
+      <a id="download-btn" class="btn-download" download="photo.jpg">
+        ⬇ Download
+      </a>
     </div>
   </div>
 
@@ -135,7 +180,7 @@
   (() => {
     const params = new URLSearchParams(window.location.search);
     const token  = params.get('token');
-    const type   = params.get('type'); // 'front', 'back', 'signature'
+    const type   = params.get('type'); // front | back | signature
 
     const titleEl    = document.getElementById('photo-title');
     const wrapEl     = document.getElementById('photo-wrap');
@@ -151,36 +196,57 @@
     titleEl.textContent = LABELS[type] || 'Photo';
 
     if (!token || !type) {
-      showError('Invalid link. Token or type missing.');
+      showError('Invalid link — token or type is missing.');
       return;
     }
 
     fetch(`/api/photo?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`)
       .then(r => r.json())
       .then(data => {
-        if (!data.image) { showError('Photo not found.'); return; }
+        if (!data.image || data.image.length < 50) {
+          showError(
+            'Photo not found.',
+            'This may be an older registration submitted before photos were stored, or the image data was not saved.'
+          );
+          return;
+        }
 
         const img = document.createElement('img');
         img.src = data.image;
         img.alt = LABELS[type] || 'Photo';
-        wrapEl.innerHTML = '';
-        wrapEl.appendChild(img);
+        if (type === 'signature') img.classList.add('sig-img');
+
+        img.onload = () => {
+          wrapEl.innerHTML = '';
+          wrapEl.appendChild(img);
+        };
+
+        img.onerror = () => {
+          showError('Could not display image — data may be corrupted.');
+        };
 
         infoEl.textContent = data.driverName
-          ? `${data.driverName} — ${data.truckNumber || ''}`
+          ? `${data.driverName}${data.truckNumber ? ' — ' + data.truckNumber : ''}`
           : 'Driver photo';
 
         downloadBtn.href     = data.image;
-        downloadBtn.download = `${type}-${token.substring(0,8)}.jpg`;
+        downloadBtn.download = `${type}-${token.substring(0, 8)}.jpg`;
       })
-      .catch(() => showError('Could not load photo. Please try again.'));
+      .catch(err => {
+        showError('Network error — could not load photo.', err.message);
+      });
 
-    function showError(msg) {
+    function showError(msg, hint) {
       wrapEl.innerHTML = `
         <div class="error">
           <div class="icon">⚠️</div>
-          <p>${msg}</p>
+          <p>${esc(msg)}</p>
+          ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
         </div>`;
+    }
+
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
   })();
   </script>
