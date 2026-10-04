@@ -153,8 +153,8 @@ app.post('/api/submit', async (req, res) => {
     const photoBackUrl  = `${baseUrl}/photo.html?token=${token}&type=back`;
     const photoSigUrl   = `${baseUrl}/photo.html?token=${token}&type=signature`;
 
-    // ── Fire-and-forget Sheet save — includes images and photo URLs ──
-    sheet({
+    // ── Fire-and-forget Sheet save — main data only (no images) ──
+    const savePromise = sheet({
       action: 'save', token,
       submittedAt:      new Date().toISOString(),
       companyName:      String(b.companyName).trim(),
@@ -168,15 +168,35 @@ app.post('/api/submit', async (req, res) => {
       expiresAt:        expiresAtCST,
       expiresAtUTC:     expiresAt.toISOString(),
       approvalStatus:   'pending',
-      // Images stored in sheet (base64) — used by /api/photo endpoint
-      licenseFront:     String(b.licenseImageData     || ''),
-      licenseBack:      String(b.licenseBackImageData || ''),
-      signature:        String(b.signatureData        || ''),
-      // Clickable photo URLs for sheet display
       photoFrontUrl,
       photoBackUrl,
       photoSigUrl
     }).catch(e => console.warn('[submit] Sheet save error:', e.message));
+
+    // ── Save images separately after main row is created ──────
+    // Split into 3 separate calls to stay within Apps Script limits
+    savePromise.then(() => {
+      // Save license front
+      sheet({
+        action: 'saveImage', token,
+        imageType: 'front',
+        imageData: String(b.licenseImageData || '')
+      }).catch(e => console.warn('[submit] Image front error:', e.message));
+
+      // Save license back
+      sheet({
+        action: 'saveImage', token,
+        imageType: 'back',
+        imageData: String(b.licenseBackImageData || '')
+      }).catch(e => console.warn('[submit] Image back error:', e.message));
+
+      // Save signature
+      sheet({
+        action: 'saveImage', token,
+        imageType: 'signature',
+        imageData: String(b.signatureData || '')
+      }).catch(e => console.warn('[submit] Image sig error:', e.message));
+    });
 
     // Respond immediately — driver doesn't wait for Sheet
     return res.json({
