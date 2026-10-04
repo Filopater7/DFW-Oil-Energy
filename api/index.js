@@ -14,6 +14,7 @@
 
 const express = require('express');
 const QRCode  = require('qrcode');
+const sharp   = require('sharp');
 
 // ── In-memory caches ───────────────────────────────────────
 if (!global._dfwApproved)     global._dfwApproved     = new Map(); // token → {qrDataURL,…}
@@ -56,7 +57,32 @@ async function sheetGet(params) {
   try { return JSON.parse(txt); } catch { return null; }
 }
 
-// ── Admin auth middleware ──────────────────────────────────
+// ── Compress image to fit Google Sheets 50K char cell limit ──
+// Target: < 35KB base64 = < 26KB binary
+async function compressForSheet(dataUrl) {
+  try {
+    const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+    const buf    = Buffer.from(base64, 'base64');
+    // Resize to max 400x250, JPEG quality 40% — gives ~15-25KB
+    const compressed = await sharp(buf)
+      .resize(400, 250, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 40 })
+      .toBuffer();
+    const result = 'data:image/jpeg;base64,' + compressed.toString('base64');
+    // Safety check — if still too large, reduce further
+    if (result.length > 45000) {
+      const smaller = await sharp(buf)
+        .resize(300, 180, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 30 })
+        .toBuffer();
+      return 'data:image/jpeg;base64,' + smaller.toString('base64');
+    }
+    return result;
+  } catch (e) {
+    console.warn('[compress] Failed:', e.message);
+    return dataUrl; // return original if compression fails
+  }
+}
 function adminAuth(req, res, next) {
   const pwd = process.env.ADMIN_PASSWORD;
   if (!pwd) return res.status(500).json({ error: 'ADMIN_PASSWORD env var not set.' });
@@ -173,29 +199,25 @@ app.post('/api/submit', async (req, res) => {
       photoSigUrl
     }).catch(e => console.warn('[submit] Sheet save error:', e.message));
 
-    // ── Save images separately after main row is created ──────
-    // Split into 3 separate calls to stay within Apps Script limits
-    savePromise.then(() => {
-      // Save license front
-      sheet({
-        action: 'saveImage', token,
-        imageType: 'front',
-        imageData: String(b.licenseImageData || '')
-      }).catch(e => console.warn('[submit] Image front error:', e.message));
+    // ── Save images separately — compressed to fit Sheets 50K cell limit ──
+    savePromise.then(async () => {
+      try {
+        const [frontCompressed, backCompressed, sigCompressed] = await Promise.all([
+          compressForSheet(String(b.licenseImageData     || '')),
+          compressForSheet(String(b.licenseBackImageData || '')),
+          compressForSheet(String(b.signatureData        || ''))
+        ]);
 
-      // Save license back
-      sheet({
-        action: 'saveImage', token,
-        imageType: 'back',
-        imageData: String(b.licenseBackImageData || '')
-      }).catch(e => console.warn('[submit] Image back error:', e.message));
-
-      // Save signature
-      sheet({
-        action: 'saveImage', token,
-        imageType: 'signature',
-        imageData: String(b.signatureData || '')
-      }).catch(e => console.warn('[submit] Image sig error:', e.message));
+        // Save each image as a separate Sheet call
+        await sheet({ action: 'saveImage', token, imageType: 'front',     imageData: frontCompressed })
+          .catch(e => console.warn('[Image front]', e.message));
+        await sheet({ action: 'saveImage', token, imageType: 'back',      imageData: backCompressed })
+          .catch(e => console.warn('[Image back]', e.message));
+        await sheet({ action: 'saveImage', token, imageType: 'signature', imageData: sigCompressed })
+          .catch(e => console.warn('[Image sig]', e.message));
+      } catch (e) {
+        console.warn('[saveImages]', e.message);
+      }
     });
 
     // Respond immediately — driver doesn't wait for Sheet
@@ -309,8 +331,6 @@ app.get('/api/confirm/:token', async (req, res) => {
 });
 
 // ── GET /api/photo ─────────────────────────────────────────
-// Returns image info for a given token and type (front/back/signature)
-// If the sheet stores a Drive URL, redirects to it directly
 app.get('/api/photo', async (req, res) => {
   try {
     const { token, type } = req.query;
@@ -318,19 +338,16 @@ app.get('/api/photo', async (req, res) => {
       return res.status(400).json({ error: 'Invalid parameters.' });
 
     const data = await sheetGet({ action: 'getPhotoByToken', token, type });
-
-    if (!data || (!data.image && !data.driveUrl))
+    if (!data || !data.image || data.image.length < 50)
       return res.status(404).json({ error: 'Photo not found.', image: null });
 
-    // If it's a Drive URL — redirect directly to it
-    if (data.driveUrl || (data.image && data.image.startsWith('https://'))) {
-      const url = data.driveUrl || data.image;
-      return res.redirect(302, url);
+    // If it's a Drive URL (legacy), redirect
+    if (data.image.startsWith('https://')) {
+      return res.redirect(302, data.image);
     }
 
-    // Legacy: base64 data
     return res.json({
-      image:       data.image || null,
+      image:       data.image,
       driverName:  data.driverName  || '',
       truckNumber: data.truckNumber || ''
     });

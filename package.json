@@ -7,7 +7,13 @@
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": ["dfw", "oil", "energy", "driver", "tracking"],
+  "keywords": [
+    "dfw",
+    "oil",
+    "energy",
+    "driver",
+    "tracking"
+  ],
   "author": "DFW Oil Energy",
   "license": "UNLICENSED",
   "private": true,
@@ -18,7 +24,8 @@
     "googleapis": "182.0.0",
     "multer": "2.4.0",
     "nodemailer": "10.0.11",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "nodemon": "3.1.4"
