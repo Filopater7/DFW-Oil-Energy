@@ -142,6 +142,8 @@
       display: flex; align-items: center; gap: 6px;
     }
     .btn-refresh:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Toast notification */
     #toast {
@@ -372,20 +374,29 @@
     }
 
     // ── REFRESH ────────────────────────────────────────────────
-    document.getElementById('refresh-btn').addEventListener('click', loadAll);
+    document.getElementById('refresh-btn').addEventListener('click', () => {
+      const btn = document.getElementById('refresh-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="animation:spin 0.8s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Refreshing…`;
+      loadAll().finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Refresh`;
+      });
+    });
 
     async function loadAll() {
       try {
         const res  = await fetch('/api/admin/all', { headers: { 'x-admin-password': adminPwd } });
         const data = await res.json();
         if (data.registrations) {
-          allRegs = data.registrations.slice().reverse(); // newest first
+          allRegs = data.registrations.slice().reverse();
           saveCache({ registrations: allRegs, analytics: data.analytics });
           renderTable();
           applyAnalytics(data.analytics || {});
         }
       } catch (e) {
         console.error('loadAll error:', e.message);
+        toast('Refresh failed: ' + e.message);
       }
     }
 
