@@ -321,9 +321,9 @@
   <div id="toast"></div>
 
   <!-- ── MONTHLY REPORT MODAL ── -->
-  <div id="report-modal" hidden style="
-    position:fixed;inset:0;background:rgba(0,0,0,0.5);
-    display:flex;align-items:center;justify-content:center;
+  <div id="report-modal" style="
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
+    align-items:center;justify-content:center;
     z-index:9998;padding:16px;">
     <div style="
       background:#fff;border-radius:12px;padding:32px;
@@ -654,15 +654,15 @@
     reportMonthInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
 
     document.getElementById('print-report-btn').addEventListener('click', () => {
-      reportModal.hidden = false;
+      reportModal.style.display = 'flex';
     });
 
     reportCancelBtn.addEventListener('click', () => {
-      reportModal.hidden = true;
+      reportModal.style.display = 'none';
     });
 
     reportModal.addEventListener('click', e => {
-      if (e.target === reportModal) reportModal.hidden = true;
+      if (e.target === reportModal) reportModal.style.display = 'none';
     });
 
     reportPrintBtn.addEventListener('click', () => {
@@ -736,7 +736,7 @@
         </table>`}
       `;
 
-      reportModal.hidden = true;
+      reportModal.style.display = 'none';
       window.print();
 
       // Hide print content after printing
