@@ -170,6 +170,32 @@
       .reg-table { font-size: 0.78rem; }
       .reg-table th, .reg-table td { padding: 8px 8px; }
     }
+
+    /* ── PRINT STYLES ── */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      #dashboard-section > div:first-child,
+      .analytics-row,
+      .section-header,
+      .reg-table-wrap { display: block !important; }
+      /* Hide everything except print content */
+      body > *:not(#print-report-content) { display: none !important; }
+      #print-report-content { display: block !important; }
+      .print-header { text-align:center; margin-bottom:24px; border-bottom:2px solid #1B2A4A; padding-bottom:16px; }
+      .print-header h1 { font-size:1.4rem; color:#1B2A4A; font-weight:800; }
+      .print-header p  { font-size:0.9rem; color:#555; margin-top:4px; }
+      .print-stats { display:flex; gap:20px; margin-bottom:20px; }
+      .print-stat { border:1px solid #D0D8E8; border-radius:8px; padding:12px 18px; text-align:center; flex:1; }
+      .print-stat .num { font-size:1.8rem; font-weight:800; color:#1B2A4A; }
+      .print-stat .lbl { font-size:0.75rem; text-transform:uppercase; color:#888; margin-top:2px; }
+      .print-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+      .print-table th { background:#1B2A4A; color:#fff; padding:8px 10px; text-align:left; font-size:0.75rem; text-transform:uppercase; }
+      .print-table td { padding:8px 10px; border-bottom:1px solid #eee; }
+      .print-table tr:nth-child(even) td { background:#F4F6FA; }
+      .badge-print-approved { color:#2E7D32; font-weight:700; }
+      .badge-print-pending  { color:#E07B20; font-weight:700; }
+      .badge-print-rejected { color:#C62828; font-weight:700; }
+    }
   </style>
 </head>
 <body>
@@ -211,7 +237,14 @@
         <!-- Header row -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
           <h2 style="color:var(--gold);font-size:1.3rem;font-weight:700;">Admin Dashboard</h2>
-          <div style="display:flex;gap:10px;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-refresh" id="print-report-btn">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              </svg>
+              Monthly Report
+            </button>
             <button class="btn-refresh" id="refresh-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -286,6 +319,46 @@
   </footer>
 
   <div id="toast"></div>
+
+  <!-- ── MONTHLY REPORT MODAL ── -->
+  <div id="report-modal" hidden style="
+    position:fixed;inset:0;background:rgba(0,0,0,0.5);
+    display:flex;align-items:center;justify-content:center;
+    z-index:9998;padding:16px;">
+    <div style="
+      background:#fff;border-radius:12px;padding:32px;
+      max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+      <h3 style="color:#1B2A4A;font-size:1.2rem;font-weight:700;margin-bottom:6px;">
+        📋 Monthly Report
+      </h3>
+      <p style="color:#6B7FA8;font-size:0.88rem;margin-bottom:20px;">
+        Select a month to print the registration report.
+      </p>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:0.82rem;font-weight:700;color:#1B2A4A;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">
+          Select Month
+        </label>
+        <input type="month" id="report-month"
+          style="width:100%;padding:10px 14px;border:1.5px solid #D0D8E8;border-radius:7px;font-size:0.98rem;color:#1B2A4A;outline:none;" />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="report-cancel-btn" style="
+          background:none;border:1px solid #D0D8E8;color:#6B7FA8;
+          padding:9px 20px;border-radius:7px;font-size:0.9rem;cursor:pointer;">
+          Cancel
+        </button>
+        <button id="report-print-btn" style="
+          background:#1B2A4A;border:none;color:#fff;
+          padding:9px 24px;border-radius:7px;font-size:0.9rem;
+          font-weight:700;cursor:pointer;">
+          🖨 Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRINT REPORT CONTENT (hidden, printed only) ── -->
+  <div id="print-report-content" hidden></div>
 
   <script>
   (() => {
@@ -568,6 +641,107 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
     }
+
+    // ── MONTHLY REPORT ────────────────────────────────────────
+    const reportModal      = document.getElementById('report-modal');
+    const reportMonthInput = document.getElementById('report-month');
+    const reportPrintBtn   = document.getElementById('report-print-btn');
+    const reportCancelBtn  = document.getElementById('report-cancel-btn');
+    const printContent     = document.getElementById('print-report-content');
+
+    // Default to current month
+    const now = new Date();
+    reportMonthInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+    document.getElementById('print-report-btn').addEventListener('click', () => {
+      reportModal.hidden = false;
+    });
+
+    reportCancelBtn.addEventListener('click', () => {
+      reportModal.hidden = true;
+    });
+
+    reportModal.addEventListener('click', e => {
+      if (e.target === reportModal) reportModal.hidden = true;
+    });
+
+    reportPrintBtn.addEventListener('click', () => {
+      const val = reportMonthInput.value; // "2026-10"
+      if (!val) { toast('Please select a month.'); return; }
+
+      const [yr, mo] = val.split('-').map(Number);
+      const monthStart = new Date(yr, mo-1, 1);
+      const monthEnd   = new Date(yr, mo, 1);
+
+      const MONTHS = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+      const monthLabel = `${MONTHS[mo-1]} ${yr}`;
+
+      // Filter registrations for chosen month
+      const monthRegs = allRegs.filter(r => {
+        const raw = r.startTimeUTC || r.startTime || r.submittedAt;
+        if (!raw) return false;
+        const d = new Date(raw);
+        return !isNaN(d) && d >= monthStart && d < monthEnd;
+      });
+
+      // Stats
+      const total    = monthRegs.length;
+      const approved = monthRegs.filter(r => (r.approvalStatus||'pending')==='approved').length;
+      const pending  = monthRegs.filter(r => (r.approvalStatus||'pending')==='pending').length;
+      const rejected = monthRegs.filter(r => (r.approvalStatus||'pending')==='rejected').length;
+
+      // Build print HTML
+      const rows = monthRegs.map((r,i) => {
+        const status = r.approvalStatus || 'pending';
+        const cls    = `badge-print-${status}`;
+        const label  = status === 'approved' ? '✓ Approved'
+                     : status === 'rejected' ? '✗ Rejected'
+                     : '⏳ Pending';
+        return `<tr>
+          <td>${i+1}</td>
+          <td><strong>${esc(r.driverName||'')}</strong><br><span style="color:#888;font-size:0.75rem">${esc(r.driverEmail||'')}</span></td>
+          <td>${esc(r.companyName||'')}</td>
+          <td>${esc(r.truckNumber||'')}</td>
+          <td>${esc(r.phoneNumber||'')}</td>
+          <td>${esc(fmtDate(r.startTime||''))}</td>
+          <td>${esc(r.parkingDuration||'')}</td>
+          <td class="${cls}">${label}</td>
+        </tr>`;
+      }).join('');
+
+      printContent.hidden = false;
+      printContent.innerHTML = `
+        <div class="print-header">
+          <h1>Payless Fuel Centers of Texas</h1>
+          <p>Monthly Registration Report — ${monthLabel}</p>
+          <p style="font-size:0.8rem;color:#888;">Generated: ${new Date().toLocaleString()}</p>
+        </div>
+        <div class="print-stats">
+          <div class="print-stat"><div class="num">${total}</div><div class="lbl">Total</div></div>
+          <div class="print-stat"><div class="num" style="color:#2E7D32">${approved}</div><div class="lbl">Approved</div></div>
+          <div class="print-stat"><div class="num" style="color:#E07B20">${pending}</div><div class="lbl">Pending</div></div>
+          <div class="print-stat"><div class="num" style="color:#C62828">${rejected}</div><div class="lbl">Rejected</div></div>
+        </div>
+        ${total === 0 ? '<p style="text-align:center;color:#888;padding:30px">No registrations found for this month.</p>' : `
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Driver Name</th><th>Company</th>
+              <th>Truck #</th><th>Phone</th>
+              <th>Start Time</th><th>Duration</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      `;
+
+      reportModal.hidden = true;
+      window.print();
+
+      // Hide print content after printing
+      setTimeout(() => { printContent.hidden = true; }, 1000);
+    });
 
   })();
   </script>
