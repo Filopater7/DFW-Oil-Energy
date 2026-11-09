@@ -103,11 +103,6 @@ function adminAuth(req, res, next) {
 
 // ── Build QR from a record ─────────────────────────────────
 async function buildQR(rec, proto, host) {
-  // Determine the correct public base URL for QR codes.
-  // Priority: SITE_URL env var → proto + host passed from request headers.
-  const base = process.env.SITE_URL
-    ? process.env.SITE_URL.replace(/\/$/, '')
-    : `${proto}://${host}`;
   const startMs   = rec.startTimeUTC  ? new Date(rec.startTimeUTC).getTime()
                                       : new Date(rec.startTime).getTime();
   const expiresMs = rec.expiresAtUTC  ? new Date(rec.expiresAtUTC).getTime()
@@ -124,7 +119,7 @@ async function buildQR(rec, proto, host) {
     dl: rec.parkingDuration || rec.durationLabel || ''
   };
   const encoded   = Buffer.from(JSON.stringify(record)).toString('base64url');
-  const verifyUrl = `${base}/verify.html?d=${encoded}`;
+  const verifyUrl = `${proto}://${host}/verify.html?d=${encoded}`;
   const qrDataURL = await QRCode.toDataURL(verifyUrl, {
     errorCorrectionLevel: 'M', margin: 2, width: 300,
     color: { dark: '#111111', light: '#FFFFFF' }
@@ -133,26 +128,9 @@ async function buildQR(rec, proto, host) {
 }
 
 // ── Health ─────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  const proto         = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const host          = req.headers.host;
-  const forwardedHost = req.headers['x-forwarded-host'] || null;
-  const siteUrl       = process.env.SITE_URL || null;
-  const base = siteUrl
-    ? siteUrl.replace(/\/$/, '')
-    : `${proto}://${host}`;
-  res.json({
-    status:        'ok',
-    time:          new Date().toISOString(),
-    autoApprove:   AUTO_APPROVE,
-    siteUrl,
-    forwardedHost,
-    host,
-    proto,
-    effectiveBase: base,
-    sampleQrUrl:   `${base}/verify.html?d=TEST`
-  });
-});
+app.get('/api/health', (_req, res) =>
+  res.json({ status: 'ok', time: new Date().toISOString() })
+);
 
 // ── Admin ping (password check only — NO Sheet call) ───────
 app.get('/api/admin/ping', adminAuth, (_req, res) =>
