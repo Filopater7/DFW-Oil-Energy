@@ -9,8 +9,18 @@
    - /api/admin/all: single Sheet call returns list+analytics
    - login ping: no Sheet call (env-var only)
    - approve: setVerifyUrl removed (saves one Sheet round-trip)
+
+   AUTO-APPROVE FLAG:
+   - Set AUTO_APPROVE_REGISTRATIONS=true (env var) to bypass the
+     "Waiting for Approval" step and issue QR codes immediately.
+   - Set to false (or remove the var) to restore manual admin approval.
    ============================================================ */
 'use strict';
+
+// ── Feature flag: set AUTO_APPROVE_REGISTRATIONS=true in env to bypass
+//   the "Waiting for Approval" step and issue QR codes immediately on submit.
+//   Set to false (or remove the variable) to restore manual admin approval.
+const AUTO_APPROVE = (process.env.AUTO_APPROVE_REGISTRATIONS || 'true').toLowerCase() === 'true';
 
 const express = require('express');
 const QRCode  = require('qrcode');
@@ -171,7 +181,7 @@ app.post('/api/submit', async (req, res) => {
     const startTimeCST = new Date(startUTC).toLocaleString('en-US', { timeZone: 'America/Chicago' });
     const expiresAtCST = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 
-    // Build photo viewer URLs
+    // ── Build photo viewer URLs + QR immediately ──────────────
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host  = req.headers.host;
     const baseUrl = `${proto}://${host}`;
@@ -179,27 +189,113 @@ app.post('/api/submit', async (req, res) => {
     const photoBackUrl  = `${baseUrl}/photo.html?token=${token}&type=back`;
     const photoSigUrl   = `${baseUrl}/photo.html?token=${token}&type=signature`;
 
-    // ── Fire-and-forget Sheet save — main data only (no images) ──
+    const rec = {
+      token,
+      companyName:     String(b.companyName).trim(),
+      driverName:      String(b.driverName).trim(),
+      driverEmail:     String(b.driverEmail).trim(),
+      truckNumber:     String(b.truckNumber).trim(),
+      phoneNumber:     String(b.phoneNumber).trim(),
+      startTime:       startTimeCST,
+      startTimeUTC:    startUTC.toISOString(),
+      parkingDuration: durationLabel,
+      expiresAt:       expiresAtCST,
+      expiresAtUTC:    expiresAt.toISOString()
+    };
+
+    // ── AUTO-APPROVE PATH ──────────────────────────────────────
+    // Controlled by AUTO_APPROVE_REGISTRATIONS env var (currently: true).
+    // To re-enable manual admin approval, set the env var to false.
+    if (AUTO_APPROVE) {
+      const { qrDataURL, verifyUrl } = await buildQR(rec, proto, host);
+
+      // Cache as approved immediately so /api/confirm returns QR instantly
+      approvedCache.set(token, {
+        qrDataURL, verifyUrl,
+        expiresAt: expiresAt.toISOString(),
+        driver: rec
+      });
+
+      // Fire-and-forget Sheet save — record as already approved
+      const savePromise = sheet({
+        action: 'save', token,
+        submittedAt:     new Date().toISOString(),
+        companyName:     rec.companyName,
+        driverName:      rec.driverName,
+        driverEmail:     rec.driverEmail,
+        truckNumber:     rec.truckNumber,
+        phoneNumber:     rec.phoneNumber,
+        startTime:       startTimeCST,
+        startTimeUTC:    startUTC.toISOString(),
+        parkingDuration: durationLabel,
+        expiresAt:       expiresAtCST,
+        expiresAtUTC:    expiresAt.toISOString(),
+        approvalStatus:  'approved',
+        photoFrontUrl, photoBackUrl, photoSigUrl, verifyUrl
+      }).catch(e => console.warn('[submit] Sheet save error:', e.message));
+
+      // Save images separately (fire-and-forget)
+      savePromise.then(async () => {
+        try {
+          const [frontCompressed, backCompressed, sigCompressed] = await Promise.all([
+            compressForSheet(String(b.licenseImageData     || '')),
+            compressForSheet(String(b.licenseBackImageData || '')),
+            compressForSheet(String(b.signatureData        || ''))
+          ]);
+          await sheet({ action: 'saveImage', token, imageType: 'front',     imageData: frontCompressed })
+            .catch(e => console.warn('[Image front]', e.message));
+          await sheet({ action: 'saveImage', token, imageType: 'back',      imageData: backCompressed })
+            .catch(e => console.warn('[Image back]', e.message));
+          await sheet({ action: 'saveImage', token, imageType: 'signature', imageData: sigCompressed })
+            .catch(e => console.warn('[Image sig]', e.message));
+        } catch (e) {
+          console.warn('[saveImages]', e.message);
+        }
+      });
+
+      return res.json({
+        success:        true,
+        approvalStatus: 'approved',
+        token,
+        qrDataURL,
+        expiresAt:      expiresAt.toISOString(),
+        message:        'Registration approved.',
+        driver: {
+          companyName:   rec.companyName,
+          driverName:    rec.driverName,
+          truckNumber:   rec.truckNumber,
+          driverEmail:   rec.driverEmail,
+          startTime:     startTimeCST,
+          durationDays:  days,
+          durationHours: hours,
+          durationMins:  mins,
+          durationLabel,
+          phoneNumber:   rec.phoneNumber
+        }
+      });
+    }
+
+    // ── MANUAL APPROVAL PATH (AUTO_APPROVE = false) ────────────
+    // Original behaviour: save as pending, driver waits on confirm.html
+    // for admin to approve via the admin panel.
     const savePromise = sheet({
       action: 'save', token,
-      submittedAt:      new Date().toISOString(),
-      companyName:      String(b.companyName).trim(),
-      driverName:       String(b.driverName).trim(),
-      driverEmail:      String(b.driverEmail).trim(),
-      truckNumber:      String(b.truckNumber).trim(),
-      phoneNumber:      String(b.phoneNumber).trim(),
-      startTime:        startTimeCST,
-      startTimeUTC:     startUTC.toISOString(),
-      parkingDuration:  durationLabel,
-      expiresAt:        expiresAtCST,
-      expiresAtUTC:     expiresAt.toISOString(),
-      approvalStatus:   'pending',
-      photoFrontUrl,
-      photoBackUrl,
-      photoSigUrl
+      submittedAt:     new Date().toISOString(),
+      companyName:     rec.companyName,
+      driverName:      rec.driverName,
+      driverEmail:     rec.driverEmail,
+      truckNumber:     rec.truckNumber,
+      phoneNumber:     rec.phoneNumber,
+      startTime:       startTimeCST,
+      startTimeUTC:    startUTC.toISOString(),
+      parkingDuration: durationLabel,
+      expiresAt:       expiresAtCST,
+      expiresAtUTC:    expiresAt.toISOString(),
+      approvalStatus:  'pending',
+      photoFrontUrl, photoBackUrl, photoSigUrl
     }).catch(e => console.warn('[submit] Sheet save error:', e.message));
 
-    // ── Save images separately — compressed to fit Sheets 50K cell limit ──
+    // Save images separately (fire-and-forget)
     savePromise.then(async () => {
       try {
         const [frontCompressed, backCompressed, sigCompressed] = await Promise.all([
@@ -207,8 +303,6 @@ app.post('/api/submit', async (req, res) => {
           compressForSheet(String(b.licenseBackImageData || '')),
           compressForSheet(String(b.signatureData        || ''))
         ]);
-
-        // Save each image as a separate Sheet call
         await sheet({ action: 'saveImage', token, imageType: 'front',     imageData: frontCompressed })
           .catch(e => console.warn('[Image front]', e.message));
         await sheet({ action: 'saveImage', token, imageType: 'back',      imageData: backCompressed })
@@ -220,23 +314,22 @@ app.post('/api/submit', async (req, res) => {
       }
     });
 
-    // Respond immediately — driver doesn't wait for Sheet
     return res.json({
       success:        true,
       approvalStatus: 'pending',
       token,
       message:        'Registration submitted. Waiting for admin approval.',
       driver: {
-        companyName:   String(b.companyName).trim(),
-        driverName:    String(b.driverName).trim(),
-        truckNumber:   String(b.truckNumber).trim(),
-        driverEmail:   String(b.driverEmail).trim(),
+        companyName:   rec.companyName,
+        driverName:    rec.driverName,
+        truckNumber:   rec.truckNumber,
+        driverEmail:   rec.driverEmail,
         startTime:     startTimeCST,
         durationDays:  days,
         durationHours: hours,
         durationMins:  mins,
         durationLabel,
-        phoneNumber:   String(b.phoneNumber).trim()
+        phoneNumber:   rec.phoneNumber
       }
     });
 

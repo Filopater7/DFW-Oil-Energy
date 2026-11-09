@@ -410,7 +410,7 @@
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Store token + driver info — QR comes after admin approval
+        // Store token + driver info + QR (auto-approved immediately)
         sessionStorage.setItem('dfw_confirm_data', JSON.stringify({
           token:          result.token,
           approvalStatus: result.approvalStatus || 'pending',

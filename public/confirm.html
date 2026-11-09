@@ -285,7 +285,7 @@
     const approvedEl = document.getElementById('approved-state');
     const errorEl    = document.getElementById('error-state');
 
-    // Read from sessionStorage (fresh) or localStorage (refresh)
+    // Read token from sessionStorage (fresh submit) or localStorage (page refresh)
     let data = null;
     try { data = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch {}
     if (!data) { try { data = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {} }
@@ -296,24 +296,25 @@
       return;
     }
 
-    // Persist to localStorage for refresh
+    // Persist token + driver info for refresh; clear session copy
     localStorage.setItem(KEY, JSON.stringify(data));
     sessionStorage.removeItem(KEY);
 
-    loadingEl.hidden = true;
-
-    // If already approved (e.g. page refresh after approval)
+    // If the API already returned an approved QR on submit (auto-approve path),
+    // go straight to the approved view — no server round-trip needed.
     if (data.approvalStatus === 'approved' && data.qrDataURL) {
+      loadingEl.hidden = true;
       showApproved(data);
       return;
     }
 
-    // ── POLLING state vars — must be declared before showPending/startPolling ──
+    // ── POLLING state vars ─────────────────────────────────────
     let pollInterval = null;
     let pollCount    = 0;
 
-    // Show pending state and start polling
-    showPending(data.driver);
+    // Always re-check the server immediately on load.
+    // With auto-approve the very first call returns approved + QR.
+    // With manual approval it falls through to the pending UI.
     startPolling(data.token);
 
     // ── PENDING ───────────────────────────────────────────────
@@ -347,11 +348,11 @@
       // Stop polling after 10 minutes
       if (pollCount > 60) {
         clearInterval(pollInterval);
-        msgEl.textContent = 'Timed out. Please refresh the page to check your status.';
+        if (msgEl) msgEl.textContent = 'Timed out. Please refresh the page to check your status.';
         return;
       }
       try {
-        msgEl.textContent = 'Checking approval status…';
+        if (msgEl) msgEl.textContent = 'Checking approval status…';
         const res    = await fetch(`/api/confirm/${encodeURIComponent(token)}`);
         const result = await res.json();
 
@@ -360,18 +361,26 @@
           // Save approved data with QR to localStorage
           const updated = { ...data, approvalStatus: 'approved', qrDataURL: result.qrDataURL, expiresAt: result.expiresAt, driver: result.driver };
           localStorage.setItem(KEY, JSON.stringify(updated));
+          // Hide loading and pending, go straight to approved
+          loadingEl.hidden = true;
           pendingEl.hidden = true;
           showApproved(updated);
         } else if (result.approvalStatus === 'rejected') {
           clearInterval(pollInterval);
+          loadingEl.hidden = true;
           pendingEl.hidden = true;
           errorEl.hidden   = false;
           errorEl.querySelector('p:last-of-type').textContent = 'Your registration was not approved. Please contact the admin.';
         } else {
-          msgEl.textContent = `Waiting for admin approval… (checked ${pollCount} time${pollCount > 1 ? 's' : ''})`;
+          // Still pending — show the waiting UI now
+          loadingEl.hidden = true;
+          if (pendingEl.hidden) showPending(data.driver);
+          if (msgEl) msgEl.textContent = `Waiting for admin approval… (checked ${pollCount} time${pollCount > 1 ? 's' : ''})`;
         }
       } catch (err) {
-        msgEl.textContent = 'Connection error — will retry…';
+        loadingEl.hidden = true;
+        if (pendingEl.hidden) showPending(data.driver);
+        if (msgEl) msgEl.textContent = 'Connection error — will retry…';
       }
     }
 
