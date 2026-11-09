@@ -104,15 +104,10 @@ function adminAuth(req, res, next) {
 // ── Build QR from a record ─────────────────────────────────
 async function buildQR(rec, proto, host) {
   // Determine the correct public base URL for QR codes.
-  // Priority: SITE_URL env var → x-forwarded-host header → host header.
-  // x-forwarded-host is set by Vercel to the public domain (e.g. dfw-oil-energy.filo5.vercel.app)
-  // even when the internal host header shows a deployment-specific hostname.
-  const forwardedHost = req.headers['x-forwarded-host'];
+  // Priority: SITE_URL env var → proto + host passed from request headers.
   const base = process.env.SITE_URL
     ? process.env.SITE_URL.replace(/\/$/, '')
-    : forwardedHost
-      ? `${proto}://${forwardedHost.split(',')[0].trim()}`
-      : `${proto}://${host}`;
+    : `${proto}://${host}`;
   const startMs   = rec.startTimeUTC  ? new Date(rec.startTimeUTC).getTime()
                                       : new Date(rec.startTime).getTime();
   const expiresMs = rec.expiresAtUTC  ? new Date(rec.expiresAtUTC).getTime()
@@ -139,15 +134,13 @@ async function buildQR(rec, proto, host) {
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  const proto           = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const host            = req.headers.host;
-  const forwardedHost   = req.headers['x-forwarded-host'] || null;
-  const siteUrl         = process.env.SITE_URL || null;
+  const proto         = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const host          = req.headers.host;
+  const forwardedHost = req.headers['x-forwarded-host'] || null;
+  const siteUrl       = process.env.SITE_URL || null;
   const base = siteUrl
     ? siteUrl.replace(/\/$/, '')
-    : forwardedHost
-      ? `${proto}://${forwardedHost.split(',')[0].trim()}`
-      : `${proto}://${host}`;
+    : `${proto}://${host}`;
   res.json({
     status:        'ok',
     time:          new Date().toISOString(),
