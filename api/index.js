@@ -103,6 +103,12 @@ function adminAuth(req, res, next) {
 
 // ── Build QR from a record ─────────────────────────────────
 async function buildQR(rec, proto, host) {
+  // Use SITE_URL env var if set — ensures the QR always encodes the
+  // production domain instead of an internal Vercel deployment hostname.
+  // Example: SITE_URL=https://dfw-oil-energy.filo5.vercel.app
+  const base = process.env.SITE_URL
+    ? process.env.SITE_URL.replace(/\/$/, '')   // strip trailing slash
+    : `${proto}://${host}`;
   const startMs   = rec.startTimeUTC  ? new Date(rec.startTimeUTC).getTime()
                                       : new Date(rec.startTime).getTime();
   const expiresMs = rec.expiresAtUTC  ? new Date(rec.expiresAtUTC).getTime()
@@ -119,7 +125,7 @@ async function buildQR(rec, proto, host) {
     dl: rec.parkingDuration || rec.durationLabel || ''
   };
   const encoded   = Buffer.from(JSON.stringify(record)).toString('base64url');
-  const verifyUrl = `${proto}://${host}/verify.html?d=${encoded}`;
+  const verifyUrl = `${base}/verify.html?d=${encoded}`;
   const qrDataURL = await QRCode.toDataURL(verifyUrl, {
     errorCorrectionLevel: 'M', margin: 2, width: 300,
     color: { dark: '#111111', light: '#FFFFFF' }
