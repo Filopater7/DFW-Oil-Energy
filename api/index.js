@@ -134,9 +134,21 @@ async function buildQR(rec, proto, host) {
 }
 
 // ── Health ─────────────────────────────────────────────────
-app.get('/api/health', (_req, res) =>
-  res.json({ status: 'ok', time: new Date().toISOString() })
-);
+app.get('/api/health', (req, res) => {
+  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const host  = req.headers.host;
+  const siteUrl = process.env.SITE_URL || null;
+  const base  = siteUrl ? siteUrl.replace(/\/$/, '') : `${proto}://${host}`;
+  res.json({
+    status:   'ok',
+    time:     new Date().toISOString(),
+    autoApprove: AUTO_APPROVE,
+    siteUrl,
+    effectiveBase: base,
+    host,
+    proto
+  });
+});
 
 // ── Admin ping (password check only — NO Sheet call) ───────
 app.get('/api/admin/ping', adminAuth, (_req, res) =>
